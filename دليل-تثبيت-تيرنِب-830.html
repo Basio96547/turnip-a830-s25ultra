@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دليل Turnip Vulkan Driver لـ Adreno 830v2 - Galaxy S25 Ultra</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --card: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --green: #3fb950;
+  --yellow: #d2991d;
+  --red: #f85149;
+  --blue: #58a6ff;
+  --purple: #a371f7;
+  --code-bg: #1c2128;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+  line-height: 1.8;
+  padding: 20px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+h1 { color: var(--purple); font-size: 2em; text-align: center; margin: 20px 0; padding-bottom: 10px; border-bottom: 2px solid var(--purple); }
+h2 { color: var(--blue); font-size: 1.5em; margin: 30px 0 15px; padding-bottom: 5px; border-bottom: 1px solid var(--border); }
+h3 { color: var(--green); font-size: 1.2em; margin: 20px 0 10px; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 15px 0;
+}
+.tip { border-left: 4px solid var(--green); }
+.warn { border-left: 4px solid var(--yellow); }
+.danger { border-left: 4px solid var(--red); }
+.info { border-left: 4px solid var(--blue); }
+code {
+  background: var(--code-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.9em;
+}
+pre {
+  background: var(--code-bg);
+  padding: 15px;
+  border-radius: 8px;
+  overflow-x: auto;
+  direction: ltr;
+  text-align: left;
+  margin: 10px 0;
+  border: 1px solid var(--border);
+}
+pre code {
+  background: none;
+  padding: 0;
+}
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 15px;
+  text-align: right;
+}
+th {
+  background: var(--code-bg);
+  color: var(--purple);
+}
+.tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: bold;
+}
+.tag-yes { background: #1a3a1a; color: var(--green); }
+.tag-no  { background: #3a1a1a; color: var(--red); }
+.tag-exp { background: #3a3a1a; color: var(--yellow); }
+.spec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.spec-item {
+  background: var(--code-bg);
+  padding: 10px 15px;
+  border-radius: 6px;
+}
+.spec-item span {
+  color: var(--yellow);
+  font-weight: bold;
+  display: block;
+}
+.emoji { font-size: 1.2em; }
+</style>
+</head>
+<body>
+
+<h1>🚀 دليل Turnip Vulkan Driver</h1>
+<p style="text-align:center; color: var(--yellow); font-size: 1.1em;">
+  لجهاز <strong>Samsung Galaxy S25 Ultra</strong> — Adreno 830v2 | Snapdragon 8 Elite (SM8750)
+</p>
+
+<!-- ================================================ -->
+<h2>📋 معلومات الجهاز المؤكدة</h2>
+<div class="card info">
+<div class="spec-grid">
+  <div class="spec-item"><span>SoC</span>Snapdragon 8 Elite (SM8750)</div>
+  <div class="spec-item"><span>GPU</span>Adreno 830v2</div>
+  <div class="spec-item"><span>Device ID</span>0x44050001</div>
+  <div class="spec-item"><span>GMEM</span>12 MB</div>
+  <div class="spec-item"><span>Max Clock</span>1200 MHz</div>
+  <div class="spec-item"><span>Subgroup</span>64</div>
+  <div class="spec-item"><span>Max Compute</span>1024 Invocations</div>
+  <div class="spec-item"><span>FT Policy</span>0xC2</div>
+  <div class="spec-item"><span>Vulkan API</span>1.3.284</div>
+  <div class="spec-item"><span>Power Levels</span>15 (160→1200 MHz)</div>
+</div>
+</div>
+
+<!-- ================================================ -->
+<h2>✅ تعريفات Turnip جاهزة — حمل الآن!</h2>
+
+<div class="card tip">
+<h3>🏆 المصدر #1 — The412Banner (موصى به)</h3>
+<p>آخر إصدار: <strong>Turnip 26.1.0 — A8xx</strong> (بناه آلي كل 3 أيام)</p>
+<p><a href="https://github.com/The412Banner/Banners-Turnip/releases/latest" target="_blank">🔗 رابط التحميل المباشر</a></p>
+<p><strong>اختر الملف:</strong> <code>Turnip-v26.1.0-*-A8xx.zip</code> — هذا هو المخصص لـ Adreno 8xx</p>
+<p>✅ A830 مدعوم بالكامل | ✅ KGSL support | ✅ sysmem mode | ⚠️ تجريبي لكنه أفضل المتاح</p>
+</div>
+
+<div class="card tip">
+<h3>🥈 المصدر #2 — whitebelyash (A8XX V26)</h3>
+<p>آخر إصدار: <strong>Turnip A8XX V26</strong> (مبني من mesa-unified turnip/gen8)</p>
+<p><a href="https://github.com/whitebelyash/freedreno_turnip-CI/releases/latest" target="_blank">🔗 رابط التحميل المباشر</a></p>
+<p>اختر ملف <code>.adpkg</code> للمحاكيات التي تدعم Adreno Tools</p>
+</div>
+
+<div class="card tip">
+<h3>🥉 المصدر #3 — K11MCH1 (v26.0.0 R8+)</h3>
+<p>آخر إصدار مع دعم 8xx: <strong>v26.0.0 Revision 8 + super beta 8xx support</strong></p>
+<p><a href="https://github.com/K11MCH1/AdrenoToolsDrivers/releases/tag/v26.0.0-rc08" target="_blank">🔗 رابط التحميل المباشر</a></p>
+<p>اختر ملف <code>.adpkg</code> — يعمل مع Skyline, Strato, Vita3K, Yuzu, Winlator</p>
+</div>
+
+<div class="card tip">
+<h3>🎯 المصدر #4 — StevenMXZ (Gen8 V16+)</h3>
+<p>آخر إصدار: <strong>Turnip Gen8 V16+</strong> — بناه تلقائي كل أسبوعين</p>
+<p><a href="https://github.com/StevenMXZ/freedreno_turnip-CI/releases/latest" target="_blank">🔗 رابط التحميل المباشر</a></p>
+</div>
+
+<hr>
+
+<!-- ================================================ -->
+<h2>📦 كيفية التثبيت على المحاكيات</h2>
+
+<h3>🎮 Citron / Sudachi / Eden (مستحسن)</h3>
+<div class="card">
+<ol>
+  <li>حمل ملف <code>.adpkg</code> أو <code>.zip</code> من أحد المصادر أعلاه</li>
+  <li>افتح المحاكي ← الإعدادات ← GPU</li>
+  <li>اختر <strong>Custom GPU Driver</strong> أو <strong>Install GPU Driver</strong></li>
+  <li>اختر الملف الذي حملته</li>
+  <li>تأكد من إعداد <code>TU_DEBUG=sysmem</code> في متغيرات البيئة (لأن GMEM يسبب تعليق GPU على A830)</li>
+  <li>أعد تشغيل المحاكي</li>
+</ol>
+</div>
+
+<h3>⚙️ إعدادات المحاكي الموصى بها لـ Adreno 830v2</h3>
+<div class="card">
+<table>
+<tr><th>الإعداد</th><th>القيمة</th><th>ملاحظة</th></tr>
+<tr><td>API</td><td>Vulkan</td><td>—</td></tr>
+<tr><td>Vsync</td><td>FIFO (On)</td><td>—</td></tr>
+<tr><td>ASTC Decoding</td><td>GPU</td><td>دعم أصلي في 830v2</td></tr>
+<tr><td>Disk Shader Cache</td><td>On</td><td>—</td></tr>
+<tr><td>Async Shaders</td><td>On</td><td>—</td></tr>
+<tr><td>Resolution</td><td>1x (720p/1080p)</td><td>ارفعها تدريجياً</td></tr>
+<tr><td>TU_DEBUG</td><td>sysmem</td><td><strong>مهم!</strong> GMEM = GPU hangs</td></tr>
+</table>
+</div>
+
+<hr>
+
+<!-- ================================================ -->
+<h2>⚠️ المشاكل المتوقعة وحلولها</h2>
+
+<div class="card danger">
+<h3>🛑 المشكلة #1: GPU Hang (توقف تام + كراش)</h3>
+<p><strong>السبب:</strong> GMEM rendering غير مستقر على A830 حالياً</p>
+<p><strong>الحل:</strong> استخدم sysmem فقط — أضف المتغير <code>TU_DEBUG=sysmem</code></p>
+<p>في Eden/Citron/Sudachi: ابحث عن "Environment Variables" أو "Debug Settings" في إعدادات المحاكي</p>
+</div>
+
+<div class="card warn">
+<h3>⚠️ المشكلة #2: تشوه الصورة (corrupted graphics)</h3>
+<p><strong>السبب:</strong> UBWC buffer detection فاشل في gralloc الجديد</p>
+<p><strong>الحل:</strong> التعريفات الحديثة من The412Banner تتضمن patch لإصلاح هذا. تأكد أنك تستخدم آخر إصدار</p>
+</div>
+
+<div class="card warn">
+<h3>⚠️ المشكلة #3: رسالة "Unsupported GPU"</h3>
+<p><strong>السبب:</strong> Device ID <code>0x44050001</code> غير معروف للتعريف القديم</p>
+<p><strong>الحل:</strong> استخدم تعريفات v26+ التي تتضمن patch <code>tu8_kgsl_26.patch</code> أو التعريفات من المصادر أعلاه</p>
+</div>
+
+<div class="card info">
+<h3>ℹ️ المشكلة #4: شاشة سوداء بعد تحميل لعبة</h3>
+<p><strong>السبب:</strong> LRZ (Late Z Resolve) يسبب IO faults على A830</p>
+<p><strong>الحل:</strong> التعريفات الحديثة تعطل LRZ تلقائياً على A8xx (<code>TU_DEBUG=NOLRZ</code>)</p>
+<p>إذا استمرت المشكلة، أضف يدوياً <code>TU_DEBUG=nolrz,sysmem</code></p>
+</div>
+
+<div class="card info">
+<h3>ℹ️ المشكلة #5: أداء منخفض في ألعاب معينة</h3>
+<p><strong>السبب:</strong> A8xx support لا يزال تجريبياً، بعض الألعاب لم تُحسّن بعد</p>
+<p><strong>الحلول:</strong></p>
+<ul>
+  <li>جرب إصدارات مختلفة من التعريف (The412Banner, whitebelyash, K11MCH1)</li>
+  <li>فعّل <code>Async Shaders</code> و <code>Disk Shader Cache</code></li>
+  <li>اخفض الدقة مؤقتاً</li>
+  <li>انتظر تحديثات Mesa القادمة (التحسينات مستمرة)</li>
+</ul>
+</div>
+
+<hr>
+
+<!-- ================================================ -->
+<h2>🔧 ما لا يدعمه A830v2 حالياً</h2>
+<div class="card">
+<table>
+<tr><th>الميزة</th><th>الحالة</th><th>ملاحظة</th></tr>
+<tr><td>Ray Tracing (full pipeline)</td><td><span class="tag tag-no">❌</span></td><td>غير مدعوم عتادياً</td></tr>
+<tr><td>Mesh Shaders</td><td><span class="tag tag-no">❌</span></td><td>غير مدعومة</td></tr>
+<tr><td>GMEM Rendering</td><td><span class="tag tag-no">❌</span></td><td>يسبب GPU hangs</td></tr>
+<tr><td>Cooperative Matrix</td><td><span class="tag tag-no">❌</span></td><td>—</td></tr>
+<tr><td>Graphics Pipeline Library</td><td><span class="tag tag-no">❌</span></td><td>—</td></tr>
+<tr><td>Float64</td><td><span class="tag tag-no">❌</span></td><td>—</td></tr>
+<tr><td>Maintenance7</td><td><span class="tag tag-no">❌</span></td><td>—</td></tr>
+</table>
+</div>
+
+<hr>
+
+<!-- ================================================ -->
+<h2>🛠️ بناء التعريف بنفسك (اختياري)</h2>
+
+<div class="card">
+<h3>متطلبات البناء</h3>
+<ul>
+  <li>Linux (Ubuntu 22.04+ مستحسن) أو WSL2 على Windows</li>
+  <li>Android NDK r26d أو r29</li>
+  <li>Git, Meson, Ninja, Python 3</li>
+</ul>
+<p>سكربت البناء متوفر في ملف <code>build-turnip-a830.sh</code> في هذا المجلد.</p>
+</div>
+
+<hr>
+
+<!-- ================================================ -->
+<h2>📊 مقارنة بين مصادر التعريفات</h2>
+<div class="card">
+<table>
+<tr><th>المصدر</th><th>آخر إصدار</th><th>A8xx</th><th>تحديث</th><th>مستقر</th></tr>
+<tr><td>The412Banner</td><td>26.1.0</td><td>✅ مخصص</td><td>كل 3 أيام</td><td>⭐ جيد</td></tr>
+<tr><td>whitebelyash</td><td>V26</td><td>✅ مخصص</td><td>يدوي</td><td>⚠️ تجريبي</td></tr>
+<tr><td>K11MCH1</td><td>26.0.0 R8</td><td>✅ تجريبي</td><td>أسبوعي</td><td>⭐ جيد</td></tr>
+<tr><td>StevenMXZ</td><td>Gen8 V16+</td><td>✅ مخصص</td><td>كل أسبوعين</td><td>⭐ جيد</td></tr>
+<tr><td>MrPurple666</td><td>T27</td><td>⚠️ غير واضح</td><td>يدوي</td><td>⭐ جيد</td></tr>
+</table>
+</div>
+
+<hr>
+
+<!-- ================================================ -->
+<h2>🔄 متابعة التحديثات</h2>
+<div class="card">
+<p>لتتبع آخر التعريفات مباشرة:</p>
+<ul>
+  <li><a href="https://skossan.github.io/turniptracker/" target="_blank">Turnip Tracker</a> — متتبع مباشر لكل الإصدارات</li>
+  <li><a href="https://www.reddit.com/r/EmulationOnAndroid/" target="_blank">r/EmulationOnAndroid</a> — مناقشات المجتمع</li>
+  <li><a href="https://github.com/The412Banner/Banners-Turnip/releases" target="_blank">The412Banner Releases</a></li>
+</ul>
+</div>
+
+<hr>
+
+<p style="text-align:center; margin: 30px 0; color: var(--purple);">
+  📅 آخر تحديث: 13 يونيو 2026 | ⚡ Turnip + Mesa Freedreno لمجتمع المحاكاة
+</p>
+
+</body>
+</html>

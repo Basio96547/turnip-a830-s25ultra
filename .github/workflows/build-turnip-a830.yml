@@ -1,0 +1,178 @@
+name: Build Turnip for Adreno 830v2
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'build-turnip-a830.sh'
+      - 'apply_a830_gpus.py'
+      - 'fix_a830_dev_info.py'
+      - '.github/workflows/build-turnip-a830.yml'
+      - 'patches-a830/**'
+  schedule:
+    # كل أسبوع — السبت الساعة 00:00 UTC
+    - cron: '0 0 * * 6'
+  workflow_dispatch:
+    inputs:
+      mesa_ref:
+        description: 'Mesa git ref (branch/tag/commit) — اتركه فارغاً لاستخدام main'
+        required: false
+        default: 'main'
+      skip_ndk_download:
+        description: 'تخطي تحميل NDK (استخدم الموجود في cache)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  build-a830:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      # ── Checkout repository ──────────────────────────────────
+      - name: استنساخ المستودع
+        uses: actions/checkout@v4
+
+      # ── Install build dependencies ───────────────────────────
+      - name: تثبيت المتطلبات
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ninja-build patchelf unzip flex bison \
+            git perl python3-pip glslang-tools curl zip patch ccache
+          pip3 install --break-system-packages meson mako
+          echo "✓ جميع المتطلبات مثبتة"
+
+      # ── Cache Android NDK ────────────────────────────────────
+      - name: استعادة NDK من الكاش
+        id: cache-ndk
+        uses: actions/cache@v4
+        with:
+          path: turnip_workdir_a830/android-ndk-r29
+          key: android-ndk-r29-${{ runner.os }}-v1
+
+      # ── Build ────────────────────────────────────────────────
+      - name: بناء Turnip لـ Adreno 830v2
+        id: build
+        env:
+          BUILD_VERSION: "${{ github.run_number }}"
+          MESA_REF: "${{ github.event.inputs.mesa_ref || 'main' }}"
+          SKIP_NDK_CACHE: "${{ steps.cache-ndk.outputs.cache-hit == 'true' && '1' || '0' }}"
+        run: |
+          chmod +x build-turnip-a830.sh
+          export BUILD_VERSION="$BUILD_VERSION"
+
+          # استخدم NDK من الكاش إذا وجد
+          if [ "$SKIP_NDK_CACHE" = "1" ]; then
+            echo "استخدام NDK من الكاش..."
+            mkdir -p turnip_workdir_a830
+            # سيتم التعرف عليه تلقائياً
+          fi
+
+          ./build-turnip-a830.sh 2>&1 | tee build.log
+
+          # استخراج معلومات الإصدار
+          ZIP_FILE=$(ls turnip_workdir_a830/Turnip-A830v2-*.zip 2>/dev/null | head -1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "❌ لم يتم العثور على ملف ZIP الناتج!"
+            exit 1
+          fi
+
+          echo "zip_file=${ZIP_FILE}" >> $GITHUB_OUTPUT
+          echo "zip_name=$(basename ${ZIP_FILE})" >> $GITHUB_OUTPUT
+
+          GITHASH=$(cd turnip_workdir_a830/mesa && git rev-parse --short HEAD)
+          echo "githash=${GITHASH}" >> $GITHUB_OUTPUT
+          echo "build_date=$(date +%Y%m%d)" >> $GITHUB_OUTPUT
+
+      # ── Upload artifact ──────────────────────────────────────
+      - name: رفع ملف التعريف
+        uses: actions/upload-artifact@v4
+        with:
+          name: turnip-a830v2-${{ steps.build.outputs.githash }}
+          path: ${{ steps.build.outputs.zip_file }}
+          retention-days: 30
+          compression-level: 0
+
+      # ── Upload build log ─────────────────────────────────────
+      - name: رفع سجل البناء
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-${{ steps.build.outputs.githash }}
+          path: build.log
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ── Create GitHub Release ────────────────────────────────────
+  release:
+    runs-on: ubuntu-latest
+    needs: build-a830
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: تحميل ملف التعريف
+        uses: actions/download-artifact@v4
+        with:
+          pattern: turnip-a830v2-*
+          merge-multiple: true
+          path: ./output
+
+      - name: إنشاء Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ZIP=$(ls output/Turnip-A830v2-*.zip 2>/dev/null | head -1)
+          if [ -z "$ZIP" ]; then
+            echo "❌ لم يتم العثور على ZIP!"
+            exit 1
+          fi
+
+          BUILD_DATE=$(date +%Y-%m-%d)
+          RUN_NUM="${{ github.run_number }}"
+          TAG="a830v2-${BUILD_DATE}-r${RUN_NUM}"
+
+          # سحب Mesa commit hash
+          GITHASH=$(echo "$(basename "$ZIP" .zip)" | grep -oP '[0-9a-f]{7,}$' || echo "unknown")
+
+          cat <<BODY > release_notes.md
+# Turnip Vulkan Driver — Adreno 830v2
+
+> ⚠️ **بناء تلقائي** — غير مضمون الاستقرار. استخدمه على مسؤوليتك.
+
+## معلومات البناء
+- **التاريخ:** ${BUILD_DATE}
+- **Mesa Commit:** \`${GITHASH}\`
+- **الجهاز المستهدف:** Samsung Galaxy S25 Ultra (Adreno 830v2)
+- **Device ID:** \`0x44050001\` (KGSL)
+- **الوضع:** sysmem-only (GMEM disabled)
+
+## ما يحتويه هذا التعريف
+- مبني من Mesa main + A8xx patches
+- يدعم: Adreno 830, 830v2, 840
+- UBWC_5/6 KGSL support
+- disable_gmem property لـ A830
+- A8xx magic registers
+- NDK r29 compatible
+
+## تعليمات التثبيت
+1. حمل الملف ZIP
+2. في محاكي Switch (Citron/Sudachi/Eden): الإعدادات → GPU → Custom Driver → اختر الملف
+3. أضف متغير البيئة: \`TU_DEBUG=sysmem\`
+4. أعد تشغيل المحاكي
+
+## تحذيرات
+- **يجب استخدام sysmem فقط** — GMEM يسبب GPU hangs على A830
+- هذا بناء تجريبي — A8xx support لا يزال قيد التطوير
+BODY
+
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Turnip A830v2 — ${BUILD_DATE} (build #${RUN_NUM})" \
+            --notes-file release_notes.md \
+            "$ZIP"
+
+          echo "✅ Release تم إنشاؤه: $TAG"
