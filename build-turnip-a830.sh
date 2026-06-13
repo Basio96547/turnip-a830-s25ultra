@@ -33,6 +33,7 @@ NDK_BIN="$NDK_DIR/toolchains/llvm/prebuilt/linux-x86_64/bin"
 SDK_VERSION="34"
 MESA_REPO="https://gitlab.freedesktop.org/mesa/mesa"
 MESA_DIR="mesa"
+MESA_REF="${MESA_REF:-main}"
 
 # A8xx patches from The412Banner/Banners-Turnip
 TU8_PATCH_URL="https://raw.githubusercontent.com/The412Banner/Banners-Turnip/A8xx/tu8_kgsl_26.patch"
@@ -106,13 +107,15 @@ prepare_workdir() {
 
     # Clone Mesa if not present, else reset
     if [ ! -d "$MESA_DIR/.git" ]; then
-        echo "  تحميل مستودع Mesa (main branch)..."
-        git clone --depth=1 -b main "$MESA_REPO" "$MESA_DIR"
+        echo "  تحميل مستودع Mesa (${MESA_REF})..."
+        git clone --depth=1 -b "$MESA_REF" "$MESA_REPO" "$MESA_DIR"
     else
-        echo "  ${GREEN}✓${NC} Mesa موجود مسبقاً — إعادة تعيين..."
+        echo "  ${GREEN}✓${NC} Mesa موجود مسبقاً — إعادة تعيين (${MESA_REF})..."
         cd "$MESA_DIR"
         git checkout .
-        git pull --depth=1 origin main 2>/dev/null || true
+        git fetch --depth=1 origin "$MESA_REF" 2>/dev/null || true
+        git checkout "$MESA_REF" 2>/dev/null || git checkout main
+        git pull --depth=1 origin "$MESA_REF" 2>/dev/null || true
         cd "$WORKDIR"
     fi
 
@@ -149,7 +152,11 @@ apply_patches() {
     fi
 
     echo "  تطبيق باتش Adreno 830v2 المخصص..."
-    if patch -p1 -N --fuzz=4 < "$REPO_ROOT/patches-a830/adreno_830v2.patch" 2>/tmp/patch_a830.log; then
+    if grep -q "a8xx_gen1_a830" src/freedreno/common/freedreno_devices.py 2>/dev/null; then
+        echo -e "    ${YELLOW}⚠${NC} a8xx_gen1_a830 موجود مسبقاً — تخطي adreno_830v2.patch"
+    elif grep -q "0x44050001" src/freedreno/common/freedreno_devices.py 2>/dev/null; then
+        echo -e "    ${YELLOW}⚠${NC} 0x44050001 موجود مسبقاً (tu8_kgsl_26) — تخطي adreno_830v2.patch"
+    elif patch -p1 -N --fuzz=4 < "$REPO_ROOT/patches-a830/adreno_830v2.patch" 2>/tmp/patch_a830.log; then
         echo -e "    ${GREEN}✓${NC} adreno_830v2.patch تم بنجاح"
     else
         echo -e "    ${YELLOW}⚠${NC} بعض أجزاء الباتش فشلت"
@@ -163,10 +170,11 @@ apply_patches() {
     python3 "$REPO_ROOT/fix_a830_dev_info.py"
 
     # Ensure freedreno_devices.py is syntactically valid
-    if ! python3 -c "compile(open('src/freedreno/common/freedreno_devices.py').read(),'f','exec')" 2>/dev/null; then
-        echo -e "    ${RED}✗${NC} freedreno_devices.py فيه أخطاء نحوية — إعادة تعيين..."
-        git checkout -- src/freedreno/common/freedreno_devices.py
+    if ! python3 -c "compile(open('src/freedreno/common/freedreno_devices.py').read(),'f','exec')"; then
+        echo -e "    ${RED}✗${NC} freedreno_devices.py syntax error — aborting build"
+        exit 1
     fi
+    echo -e "    ${GREEN}✓${NC} freedreno_devices.py صحيح نحوياً"
 
     # Preventive fixes for NDK r29
     echo "  إصلاحات توافق NDK r29..."
@@ -259,7 +267,12 @@ EOF
         --reconfigure 2>&1 | tail -3
 
     echo "  بناء بالمترجم (ninja)..."
-    ninja -C build-android-aarch64 install 2>&1 | tail -5
+    ninja -C build-android-aarch64 install 2>&1 | tee "$WORKDIR/ninja.log"
+    if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+        echo -e "${RED}  ✗ فشل ninja!${NC}"
+        tail -50 "$WORKDIR/ninja.log"
+        exit 1
+    fi
 
     if [ ! -f /tmp/turnip-a830/lib/libvulkan_freedreno.so ]; then
         echo -e "${RED}  ✗ فشل البناء! لم يتم العثور على libvulkan_freedreno.so${NC}"
@@ -278,9 +291,12 @@ package_driver() {
     cd /tmp/turnip-a830/lib
 
     local githash=$(cd "$WORKDIR/$MESA_DIR" && git rev-parse --short HEAD)
+    local vk_header="$WORKDIR/$MESA_DIR/include/vulkan/vulkan_core.h"
+    local vk_patch=$(grep '^#define VK_HEADER_VERSION ' "$vk_header" | awk '{print $3}')
+    local driver_ver="Vulkan 1.3.${vk_patch}"
 
     # Create meta.json for adrenotools compatibility
-    cat <<'PKGJSON' > meta.json
+    cat > meta.json <<EOF
 {
   "schemaVersion": 1,
   "name": "Turnip A830v2 - Galaxy S25 Ultra",
@@ -288,7 +304,7 @@ package_driver() {
   "author": "Custom Build",
   "packageVersion": "1",
   "vendor": "Mesa",
-  "driverVersion": "Vulkan 1.3.284",
+  "driverVersion": "${driver_ver}",
   "minApi": 28,
   "files": [
     {
@@ -297,7 +313,7 @@ package_driver() {
     }
   ]
 }
-PKGJSON
+EOF
 
     local zip_name="Turnip-A830v2-V${BUILD_VERSION}-${githash}.zip"
     zip -q "/tmp/${zip_name}" libvulkan_freedreno.so meta.json
@@ -306,7 +322,7 @@ PKGJSON
     cp "/tmp/${zip_name}" "$WORKDIR/"
 
     echo -e "  ${GREEN}✓${NC} الحزمة: ${zip_name}"
-    echo -e "  ${GREEN}✓${NC} نسخة Vulkan: Vulkan 1.3.284"
+    echo -e "  ${GREEN}✓${NC} نسخة Vulkan: ${driver_ver}"
     echo -e "  ${GREEN}✓${NC} مكان الملف: ${WORKDIR}/${zip_name}"
     echo ""
 }

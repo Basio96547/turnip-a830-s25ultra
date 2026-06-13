@@ -39,6 +39,7 @@ def apply():
             print("  ✓ أضيفت disable_gmem + has_image_processing إلى fd_dev_info.props")
         else:
             print("  ⚠ لم يتم العثور على نمط props struct — قد يكون الكود تغير")
+            sys.exit(1)
     else:
         print("  ✓ disable_gmem موجود مسبقاً في fd_dev_info.h")
 

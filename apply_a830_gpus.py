@@ -45,12 +45,22 @@ def apply():
 
     # 3. Ensure disable_gmem = True is in a8xx_gen1_a830 props
     if 'disable_gmem = True' not in content:
-        # Find the a8xx_gen1 GPUProps and add disable_gmem
-        old_gen1_end = r'(has_salu_int_narrowing_quirk\s*=\s*True)(\s*\))'
-        new_gen1_end = r'\1,\n\n        # Disable GMEM for A830 — GMEM causes GPU hangs\n        disable_gmem = True\2'
-        content = re.sub(old_gen1_end, new_gen1_end, content)
-        modified = True
-        print("  ✓ أضيف disable_gmem = True إلى a8xx_gen1 GPUProps")
+        # Target only a8xx_gen1_a830 GPUProps block
+        old_gen1_end = (
+            r'(a8xx_gen1_a830 = GPUProps\([\s\S]*?'
+            r'has_salu_int_narrowing_quirk\s*=\s*True)(\s*\))'
+        )
+        new_gen1_end = (
+            r'\1,\n\n        # Disable GMEM for A830 — GMEM causes GPU hangs\n'
+            r'        disable_gmem = True\2'
+        )
+        new_content, count = re.subn(old_gen1_end, new_gen1_end, content, count=1)
+        if count == 0:
+            print("  ⚠ لم يُعثر على a8xx_gen1_a830 — تخطي disable_gmem")
+        else:
+            content = new_content
+            modified = True
+            print("  ✓ أضيف disable_gmem = True إلى a8xx_gen1_a830")
     else:
         print("  ✓ disable_gmem = True موجود مسبقاً")
 
