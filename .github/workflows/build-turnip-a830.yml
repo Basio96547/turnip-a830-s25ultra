@@ -134,45 +134,32 @@ jobs:
           BUILD_DATE=$(date +%Y-%m-%d)
           RUN_NUM="${{ github.run_number }}"
           TAG="a830v2-${BUILD_DATE}-r${RUN_NUM}"
+          GITHASH=$(basename "$ZIP" .zip | grep -oE '[0-9a-f]{7,}$' || echo "unknown")
 
-          # سحب Mesa commit hash
-          GITHASH=$(echo "$(basename "$ZIP" .zip)" | grep -oP '[0-9a-f]{7,}$' || echo "unknown")
-
-          cat <<BODY > release_notes.md
-# Turnip Vulkan Driver — Adreno 830v2
-
-> ⚠️ **بناء تلقائي** — غير مضمون الاستقرار. استخدمه على مسؤوليتك.
-
-## معلومات البناء
-- **التاريخ:** ${BUILD_DATE}
-- **Mesa Commit:** \`${GITHASH}\`
-- **الجهاز المستهدف:** Samsung Galaxy S25 Ultra (Adreno 830v2)
-- **Device ID:** \`0x44050001\` (KGSL)
-- **الوضع:** sysmem-only (GMEM disabled)
-
-## ما يحتويه هذا التعريف
-- مبني من Mesa main + A8xx patches
-- يدعم: Adreno 830, 830v2, 840
-- UBWC_5/6 KGSL support
-- disable_gmem property لـ A830
-- A8xx magic registers
-- NDK r29 compatible
-
-## تعليمات التثبيت
-1. حمل الملف ZIP
-2. في محاكي Switch (Citron/Sudachi/Eden): الإعدادات → GPU → Custom Driver → اختر الملف
-3. أضف متغير البيئة: \`TU_DEBUG=sysmem\`
-4. أعد تشغيل المحاكي
-
-## تحذيرات
-- **يجب استخدام sysmem فقط** — GMEM يسبب GPU hangs على A830
-- هذا بناء تجريبي — A8xx support لا يزال قيد التطوير
-BODY
+          NOTES_FILE=$(mktemp)
+          {
+            echo "# Turnip Vulkan Driver — Adreno 830v2"
+            echo ""
+            echo "> ⚠️ **بناء تلقائي** — غير مضمون الاستقرار. استخدمه على مسؤوليتك."
+            echo ""
+            echo "## معلومات البناء"
+            echo "- **التاريخ:** ${BUILD_DATE}"
+            echo "- **Mesa Commit:** \`${GITHASH}\`"
+            echo "- **الجهاز المستهدف:** Samsung Galaxy S25 Ultra (Adreno 830v2)"
+            echo "- **Device ID:** \`0x44050001\` (KGSL)"
+            echo "- **الوضع:** sysmem-only (GMEM disabled)"
+            echo ""
+            echo "## تعليمات التثبيت"
+            echo "1. حمل الملف ZIP"
+            echo "2. محاكي Switch: Settings → GPU → Custom Driver"
+            echo "3. أضف \`TU_DEBUG=sysmem\`"
+            echo "4. أعد تشغيل المحاكي"
+          } > "$NOTES_FILE"
 
           gh release create "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Turnip A830v2 — ${BUILD_DATE} (build #${RUN_NUM})" \
-            --notes-file release_notes.md \
+            --notes-file "$NOTES_FILE" \
             "$ZIP"
 
           echo "✅ Release تم إنشاؤه: $TAG"
