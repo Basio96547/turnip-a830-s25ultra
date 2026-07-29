@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# ═══════════════════════════════════════════════════════════════════════
+#  chrome-pc — كروم سطح المكتب على الجوال (Chromium arm64 + Turnip/ANGLE)
+#
+#  الرسوميات: Chromium يتحدث مع Vulkan مباشرة عبر ANGLE، أي أن Turnip
+#  يُستخدم بدون الحاجة لطبقة OpenGL — وهذا أسرع وأكثر استقراراً.
+#
+#  متغيرات:
+#    S25_GPU=off            تعطيل تسريع الـ GPU
+#    S25_SCALE=1.6          تكبير الواجهة
+#    S25_CHROME_FLAGS="…"   إضافة رايات خاصة
+#    S25_CHROME_BIN=…       تحديد متصفح آخر يدوياً
+# ═══════════════════════════════════════════════════════════════════════
+
+# shellcheck source=../etc/env.sh
+. /opt/s25/etc/env.sh
+
+BIN="${S25_CHROME_BIN:-}"
+if [ -z "$BIN" ]; then
+    for c in chromium chromium-browser thorium-browser google-chrome-stable google-chrome brave-browser; do
+        if command -v "$c" >/dev/null 2>&1; then BIN="$c"; break; fi
+    done
+fi
+[ -n "$BIN" ] || {
+    printf '✗ لم يتم العثور على متصفح. ثبّته بـ: sudo apt install chromium\n' >&2
+    exit 1
+}
+
+FEATURES=()
+FLAGS=(
+    --ozone-platform=x11
+    --no-sandbox                 # proot لا يوفر user namespaces
+    --disable-dev-shm-usage
+    --password-store=basic
+    --disable-gpu-sandbox
+    --force-device-scale-factor="$S25_SCALE"
+    --user-data-dir="$HOME/.config/chrome-pc"
+    --disk-cache-size=268435456
+)
+
+if [ "$S25_GPU_ACTIVE" = "turnip" ]; then
+    FLAGS+=(
+        --use-gl=angle
+        --use-angle=vulkan
+        --ignore-gpu-blocklist
+        --enable-gpu-rasterization
+        --enable-accelerated-2d-canvas
+    )
+    FEATURES+=(Vulkan VulkanFromANGLE DefaultANGLEVulkan)
+else
+    FLAGS+=(--disable-gpu)
+fi
+
+if [ "${S25_APP_FULLSCREEN:-0}" = "1" ]; then
+    FLAGS+=(--start-fullscreen)
+fi
+
+if [ "${#FEATURES[@]}" -gt 0 ]; then
+    FLAGS+=("--enable-features=$(IFS=,; printf '%s' "${FEATURES[*]}")")
+fi
+
+# رايات إضافية من المستخدم
+if [ -n "${S25_CHROME_FLAGS:-}" ]; then
+    read -r -a EXTRA <<< "$S25_CHROME_FLAGS"
+    FLAGS+=("${EXTRA[@]}")
+fi
+
+exec "$BIN" "${FLAGS[@]}" "$@"

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# ═══════════════════════════════════════════════════════════════════════
+#  s25-app — تشغيل تطبيق واحد مع مدير نوافذ خفيف (بدون سطح مكتب كامل)
+#  الاستخدام: s25-app <أمر التطبيق> [وسائط]
+# ═══════════════════════════════════════════════════════════════════════
+
+# shellcheck source=../etc/env.sh
+. /opt/s25/etc/env.sh
+
+[ $# -ge 1 ] || { printf '✗ الاستخدام: s25-app <أمر> [وسائط]\n' >&2; exit 1; }
+
+WM_PID=""
+cleanup() {
+    [ -n "$WM_PID" ] && kill "$WM_PID" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+if command -v openbox >/dev/null 2>&1; then
+    openbox >/dev/null 2>&1 &
+    WM_PID=$!
+    sleep 1
+elif command -v xfwm4 >/dev/null 2>&1; then
+    xfwm4 >/dev/null 2>&1 &
+    WM_PID=$!
+    sleep 1
+fi
+
+"$@"

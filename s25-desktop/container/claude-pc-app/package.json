@@ -1,0 +1,15 @@
+{
+  "name": "claude-pc",
+  "productName": "Claude PC",
+  "version": "1.0.0",
+  "description": "نافذة تطبيق سطح مكتب لـ Claude على Galaxy S25 Ultra (Termux + proot + Turnip)",
+  "main": "main.js",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "electron": ">=33"
+  }
+}

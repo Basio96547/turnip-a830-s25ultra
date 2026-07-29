@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# ═══════════════════════════════════════════════════════════════════════
+#  claude-pc — تشغيل Claude كتطبيق سطح مكتب على الجوال
+#
+#  الأولوية:
+#    1. حزمة Claude Desktop (بناء المجتمع لـ Linux/arm64) إن كانت مثبتة
+#    2. غلاف Electron المحلي في /opt/s25/claude-pc (نافذة تطبيق لـ claude.ai)
+#
+#  متغيرات:
+#    S25_CLAUDE_IMPL=wrapper   فرض استخدام غلاف Electron
+#    S25_CLAUDE_IMPL=desktop   فرض استخدام حزمة سطح المكتب
+#    S25_CLAUDE_URL=…          فتح رابط مختلف (مثلاً https://claude.ai/code)
+#    S25_GPU=off               تعطيل تسريع الـ GPU
+# ═══════════════════════════════════════════════════════════════════════
+
+# shellcheck source=../etc/env.sh
+. /opt/s25/etc/env.sh
+
+IMPL="${S25_CLAUDE_IMPL:-auto}"
+DESKTOP_BIN=""
+if command -v claude-desktop >/dev/null 2>&1; then
+    DESKTOP_BIN="$(command -v claude-desktop)"
+fi
+
+WRAPPER_DIR=/opt/s25/claude-pc
+WRAPPER_ELECTRON="$WRAPPER_DIR/node_modules/electron/cli.js"
+
+run_desktop() {
+    [ -n "$DESKTOP_BIN" ] || return 1
+    exec "$DESKTOP_BIN" --no-sandbox --ozone-platform=x11 \
+        --force-device-scale-factor="$S25_SCALE" "$@"
+}
+
+run_wrapper() {
+    [ -f "$WRAPPER_ELECTRON" ] || return 1
+    local node_bin
+    node_bin="$(command -v node || true)"
+    [ -n "$node_bin" ] || return 1
+    exec "$node_bin" "$WRAPPER_ELECTRON" "$WRAPPER_DIR" "$@"
+}
+
+case "$IMPL" in
+    desktop) run_desktop "$@" || { printf '✗ حزمة Claude Desktop غير مثبتة\n' >&2; exit 1; } ;;
+    wrapper) run_wrapper "$@" || { printf '✗ غلاف Claude PC غير مثبت — شغّل install-claude-desktop.sh\n' >&2; exit 1; } ;;
+    *)
+        run_desktop "$@" || true
+        run_wrapper "$@" || true
+        printf '✗ لا توجد نسخة من Claude PC مثبتة.\n  شغّل: sudo bash /opt/s25/src/install-claude-desktop.sh\n' >&2
+        exit 1
+        ;;
+esac

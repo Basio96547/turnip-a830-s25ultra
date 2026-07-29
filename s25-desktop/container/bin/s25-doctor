@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+set -uo pipefail
+# ═══════════════════════════════════════════════════════════════════════
+#  s25-doctor — تشخيص نظام سطح المكتب (رسوميات، عرض، صوت، تطبيقات)
+# ═══════════════════════════════════════════════════════════════════════
+
+# shellcheck source=../etc/env.sh
+. /opt/s25/etc/env.sh
+
+G=$'\033[0;32m'; Y=$'\033[0;33m'; R=$'\033[0;31m'; N=$'\033[0m'
+pass() { printf '  %s✓%s %-28s %s\n' "$G" "$N" "$1" "${2:-}"; }
+fail() { printf '  %s✗%s %-28s %s\n' "$R" "$N" "$1" "${2:-}"; }
+skip() { printf '  %s⚠%s %-28s %s\n' "$Y" "$N" "$1" "${2:-}"; }
+head2() { printf '\n%s── %s%s\n' "$G" "$1" "$N"; }
+
+printf '%s\n' "${G}تشخيص نظام S25 Desktop${N}"
+
+head2 "النظام"
+pass "التوزيعة" "$( (. /etc/os-release 2>/dev/null && echo "$PRETTY_NAME") || echo مجهولة)"
+pass "المعمارية" "$(uname -m)"
+pass "النواة" "$(uname -r)"
+pass "الذاكرة" "$(awk '/^MemTotal:/ {printf "%.1f GB", $2/1048576}' /proc/meminfo 2>/dev/null)"
+pass "المعالجات" "$(nproc 2>/dev/null)"
+
+head2 "الرسوميات (Turnip / A830)"
+if [ -e /dev/kgsl-3d0 ]; then
+    pass "/dev/kgsl-3d0" "متاح"
+    if [ -r /dev/kgsl-3d0 ] && [ -w /dev/kgsl-3d0 ]; then
+        pass "صلاحيات KGSL" "قراءة/كتابة"
+    else
+        fail "صلاحيات KGSL" "لا يمكن الوصول — شغّل الجلسة عبر proot-distro"
+    fi
+else
+    fail "/dev/kgsl-3d0" "غير موجود — لا يوجد تسريع GPU"
+fi
+
+if [ -n "${VK_DRIVER_FILES:-}" ] && [ -r "${VK_DRIVER_FILES:-/nonexistent}" ]; then
+    pass "ملف ICD" "$VK_DRIVER_FILES"
+else
+    fail "ملف ICD" "غير موجود — Mesa/Turnip غير مبني (build-mesa-turnip.sh)"
+fi
+
+if [ -f /opt/s25/mesa/lib/libvulkan_freedreno.so ]; then
+    pass "libvulkan_freedreno.so" "$(du -h /opt/s25/mesa/lib/libvulkan_freedreno.so 2>/dev/null | cut -f1)"
+else
+    fail "libvulkan_freedreno.so" "غير موجود"
+fi
+
+pass "وضع الرسوميات" "$S25_GPU_ACTIVE (TU_DEBUG=${TU_DEBUG:-غير مضبوط})"
+
+if command -v vulkaninfo >/dev/null 2>&1; then
+    VK_OUT="$(timeout 60 vulkaninfo --summary 2>/dev/null || true)"
+    VK_DEV="$(printf '%s' "$VK_OUT" | grep -m1 'deviceName' | sed 's/.*= *//')"
+    if [ -n "$VK_DEV" ]; then
+        pass "جهاز Vulkan" "$VK_DEV"
+        printf '%s' "$VK_OUT" | grep -m1 'apiVersion' | sed 's/^/    /'
+    else
+        fail "جهاز Vulkan" "vulkaninfo لم يجد جهازاً"
+    fi
+else
+    skip "vulkaninfo" "غير مثبت (sudo apt install vulkan-tools)"
+fi
+
+head2 "العرض والصوت"
+if [ -n "${DISPLAY:-}" ] && command -v xdpyinfo >/dev/null 2>&1 && \
+   timeout 10 xdpyinfo >/dev/null 2>&1; then
+    pass "خادم X ($DISPLAY)" "$(xdpyinfo 2>/dev/null | awk '/dimensions:/ {print $2}')"
+    if command -v glxinfo >/dev/null 2>&1; then
+        GL_REND="$(timeout 60 glxinfo -B 2>/dev/null | grep -m1 'OpenGL renderer' | sed 's/.*: *//')"
+        if [ -n "$GL_REND" ]; then pass "OpenGL" "$GL_REND"; else fail "OpenGL" "glxinfo فشل"; fi
+    else
+        skip "glxinfo" "غير مثبت (sudo apt install mesa-utils)"
+    fi
+else
+    skip "خادم X" "لا يوجد اتصال بـ $DISPLAY — شغّل من داخل جلسة s25-desktop"
+fi
+
+if command -v pactl >/dev/null 2>&1 && timeout 10 pactl info >/dev/null 2>&1; then
+    pass "الصوت" "$PULSE_SERVER"
+else
+    skip "الصوت" "لا اتصال بـ ${PULSE_SERVER:-PulseAudio}"
+fi
+
+head2 "التطبيقات"
+for app in chromium chrome-pc claude-pc claude-desktop claude node npm openbox xfce4-session; do
+    if command -v "$app" >/dev/null 2>&1; then
+        pass "$app" "$(command -v "$app")"
+    else
+        skip "$app" "غير مثبت"
+    fi
+done
+if [ -f /opt/s25/claude-pc/node_modules/electron/cli.js ]; then
+    pass "غلاف Claude PC" "Electron جاهز"
+else
+    skip "غلاف Claude PC" "غير مثبت"
+fi
+
+head2 "التخزين"
+df -h / /opt 2>/dev/null | sed 's/^/  /'
+
+printf '\n%sانتهى التشخيص.%s للمساعدة: s25-desktop/docs/TROUBLESHOOTING.md\n' "$G" "$N"

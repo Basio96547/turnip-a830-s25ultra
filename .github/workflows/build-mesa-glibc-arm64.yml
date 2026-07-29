@@ -1,0 +1,72 @@
+name: Build Mesa (Turnip KGSL + Zink) — proot glibc arm64
+
+# يبني Mesa لحاويات proot (glibc/aarch64) بدل بنائه على الجوال لساعتين.
+# الناتج: mesa-a830-glibc-arm64.tar.gz يُثبَّت بـ:
+#   bash s25-desktop/install.sh --mesa-tarball <path-or-url>
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 's25-desktop/container/build-mesa-turnip.sh'
+      - 's25-desktop/lib/common.sh'
+      - 'patches-a830/**'
+      - 'apply_a830_gpus.py'
+      - 'fix_a830_dev_info.py'
+      - '.github/workflows/build-mesa-glibc-arm64.yml'
+  workflow_dispatch:
+    inputs:
+      mesa_ref:
+        description: 'Mesa git ref (branch/tag/commit)'
+        required: false
+        default: 'main'
+      base_image:
+        description: 'صورة البناء (تحدد أقدم glibc مدعوم)'
+        required: false
+        default: 'debian:bookworm'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # منصة arm64 أصلية — أسرع بكثير من محاكاة QEMU
+    runs-on: ubuntu-24.04-arm
+    container: ${{ github.event.inputs.base_image || 'debian:bookworm' }}
+    timeout-minutes: 300
+
+    steps:
+      - name: تثبيت أدوات أساسية
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq git ca-certificates curl xz-utils sudo
+
+      - name: استنساخ المستودع
+        uses: actions/checkout@v4
+
+      - name: بناء Mesa (Turnip/KGSL + Zink)
+        env:
+          MESA_REF: ${{ github.event.inputs.mesa_ref || 'main' }}
+        run: |
+          mkdir -p artifacts
+          bash s25-desktop/container/build-mesa-turnip.sh \
+            --prefix /opt/s25/mesa \
+            --work "$GITHUB_WORKSPACE/mesa-work" \
+            --mesa-ref "$MESA_REF" \
+            --jobs "$(nproc)" \
+            --tarball-out "$GITHUB_WORKSPACE/artifacts/mesa-a830-glibc-arm64.tar.gz"
+
+      - name: معلومات الحزمة
+        run: |
+          ls -lh artifacts/
+          echo "--- محتويات مختصرة ---"
+          tar -tzf artifacts/mesa-a830-glibc-arm64.tar.gz | head -20
+          echo "glibc: $(ldd --version | head -1)"
+
+      - name: رفع الحزمة
+        uses: actions/upload-artifact@v4
+        with:
+          name: mesa-a830-glibc-arm64
+          path: artifacts/mesa-a830-glibc-arm64.tar.gz
+          retention-days: 30
+          compression-level: 0

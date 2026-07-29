@@ -1,0 +1,55 @@
+name: Lint s25-desktop
+
+on:
+  push:
+    paths:
+      - 's25-desktop/**'
+      - '.github/workflows/lint-s25-desktop.yml'
+  pull_request:
+    paths:
+      - 's25-desktop/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: تثبيت أدوات الفحص
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+
+      - name: فحص نحوي لكل سكربتات bash
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            if bash -n "$f"; then
+              echo "✓ $f"
+            else
+              echo "✗ $f"; fail=1
+            fi
+          done < <(find s25-desktop -type f \( -name '*.sh' -o -path 's25-desktop/container/bin/*' \))
+          exit $fail
+
+      - name: shellcheck
+        run: |
+          shellcheck --severity=warning --external-sources \
+            s25-desktop/install.sh \
+            s25-desktop/lib/common.sh \
+            s25-desktop/termux/*.sh \
+            s25-desktop/termux/shortcuts/*.sh \
+            s25-desktop/container/*.sh \
+            s25-desktop/container/bin/* \
+            s25-desktop/container/etc/*.sh
+
+      - name: فحص ملفات JavaScript و JSON
+        run: |
+          node --check s25-desktop/container/claude-pc-app/main.js
+          node --check s25-desktop/container/claude-pc-app/preload.js
+          node -e "JSON.parse(require('fs').readFileSync('s25-desktop/container/claude-pc-app/package.json','utf8'))"
+          echo "✓ JS/JSON سليمة"

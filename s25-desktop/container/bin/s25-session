@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# ═══════════════════════════════════════════════════════════════════════
+#  s25-session — نقطة الدخول للجلسة الرسومية داخل الحاوية
+#  الاستخدام: s25-session [desktop|claude|chrome|shell|<أمر>]
+# ═══════════════════════════════════════════════════════════════════════
+
+# shellcheck source=../etc/env.sh
+. /opt/s25/etc/env.sh
+
+MODE="${1:-desktop}"
+[ $# -gt 0 ] && shift || true
+
+mkdir -p "$HOME/.cache" "$HOME/Desktop" 2>/dev/null || true
+
+if [ "$MODE" != "shell" ]; then
+    # كثافة النقاط وإيقاف مؤقت الشاشة
+    printf 'Xft.dpi: %s\nXft.antialias: 1\nXft.hinting: 1\n' "$S25_DPI" | xrdb -merge 2>/dev/null || true
+    xset -dpms 2>/dev/null || true
+    xset s off 2>/dev/null || true
+    xsetroot -solid '#1b1b1f' 2>/dev/null || true
+fi
+
+printf '▶ الجلسة: %s | الرسوميات: %s | DPI: %s\n' "$MODE" "$S25_GPU_ACTIVE" "$S25_DPI"
+if [ "$S25_GPU_ACTIVE" = "software" ] && [ "${S25_GPU:-auto}" != "off" ]; then
+    printf '⚠ Turnip غير مُحمّل — الرسوميات على المعالج. شغّل s25-doctor للتفاصيل.\n' >&2
+fi
+
+case "$MODE" in
+    desktop)
+        exec dbus-launch --exit-with-session xfce4-session
+        ;;
+    claude)
+        # وضع التطبيق الواحد: نافذة بملء الشاشة بدون سطح مكتب كامل
+        export S25_APP_FULLSCREEN="${S25_APP_FULLSCREEN:-1}"
+        exec dbus-launch --exit-with-session /opt/s25/bin/s25-app /opt/s25/bin/claude-pc "$@"
+        ;;
+    chrome)
+        export S25_APP_FULLSCREEN="${S25_APP_FULLSCREEN:-1}"
+        exec dbus-launch --exit-with-session /opt/s25/bin/s25-app /opt/s25/bin/chrome-pc "$@"
+        ;;
+    shell)
+        exec bash -l
+        ;;
+    *)
+        exec dbus-launch --exit-with-session "$MODE" "$@"
+        ;;
+esac
