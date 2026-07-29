@@ -6,9 +6,8 @@ set -euo pipefail
 #
 #  أول تشغيل: ينزّل حزمة Chrome Enterprise MSI الرسمية ويثبّتها في بيئة ويندوز.
 #
-#  ⚠️ Chrome على Wine يحتاج تعطيل حمايته (--no-sandbox) وأداؤه أبطأ بكثير من
-#  chrome-pc (كروم أصلي على معالج الجهاز). استخدم هذا فقط إن كنت تريد نسخة
-#  ويندوز بعينها.
+#  ⚠️ Chrome على Wine يحتاج تعطيل حمايته (--no-sandbox) وأداؤه متواضع.
+#  إن لم يعمل فراجع سلّم الحلول في docs/WINDOWS.md.
 #
 #  متغيرات:
 #    S25_CHROME_MSI_URL=…    رابط أو مسار MSI بديل
@@ -46,7 +45,6 @@ if [ ! -f "$CHROME_EXE" ] || [ "${S25_WIN_REINSTALL:-0}" = "1" ]; then
 ✗ فشل تنزيل حزمة Chrome لويندوز.
   البديل: نزّلها يدوياً ثم:
      S25_CHROME_MSI_URL=/mnt/sdcard/Download/chrome.msi chrome-pc-win
-  أو استخدم كروم الأصلي الأسرع:  chrome-pc
 EOF
                     exit 1
                 fi
@@ -60,7 +58,7 @@ EOF
         cat >&2 <<'EOF'
 ✗ لم يُعثر على chrome.exe بعد التثبيت.
   للتشخيص:  win-run winecfg
-  البديل الذي يعمل بأداء أعلى:  chrome-pc
+  راجع: s25-desktop/docs/WINDOWS.md
 EOF
         exit 1
     fi

@@ -2,7 +2,7 @@
 set -euo pipefail
 # ═══════════════════════════════════════════════════════════════════════
 #  s25-session — نقطة الدخول للجلسة الرسومية داخل الحاوية
-#  الاستخدام: s25-session [desktop|claude|chrome|shell|<أمر>]
+#  الاستخدام: s25-session [desktop|win-claude|win-chrome|windows|shell|<أمر>]
 # ═══════════════════════════════════════════════════════════════════════
 
 # shellcheck source=../etc/env.sh
@@ -30,20 +30,13 @@ case "$MODE" in
     desktop)
         exec dbus-launch --exit-with-session xfce4-session
         ;;
-    claude)
-        # وضع التطبيق الواحد: نافذة بملء الشاشة بدون سطح مكتب كامل
-        export S25_APP_FULLSCREEN="${S25_APP_FULLSCREEN:-1}"
-        exec dbus-launch --exit-with-session /opt/s25/bin/s25-app /opt/s25/bin/claude-pc "$@"
-        ;;
-    chrome)
-        export S25_APP_FULLSCREEN="${S25_APP_FULLSCREEN:-1}"
-        exec dbus-launch --exit-with-session /opt/s25/bin/s25-app /opt/s25/bin/chrome-pc "$@"
-        ;;
     win-claude)
         # Claude Desktop نسخة ويندوز (.exe) عبر Wine + box64
+        export S25_APP_FULLSCREEN="${S25_APP_FULLSCREEN:-1}"
         exec dbus-launch --exit-with-session /opt/s25/bin/s25-app /opt/s25/bin/claude-pc-win "$@"
         ;;
     win-chrome)
+        export S25_APP_FULLSCREEN="${S25_APP_FULLSCREEN:-1}"
         exec dbus-launch --exit-with-session /opt/s25/bin/s25-app /opt/s25/bin/chrome-pc-win "$@"
         ;;
     windows)

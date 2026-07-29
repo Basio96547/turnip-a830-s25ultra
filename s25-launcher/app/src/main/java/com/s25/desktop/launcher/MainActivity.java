@@ -65,12 +65,6 @@ public class MainActivity extends Activity {
         bind(R.id.btn_desktop, new Runnable() {
             @Override public void run() { launchMode("desktop"); }
         });
-        bind(R.id.btn_claude, new Runnable() {
-            @Override public void run() { launchMode("claude"); }
-        });
-        bind(R.id.btn_chrome, new Runnable() {
-            @Override public void run() { launchMode("chrome"); }
-        });
         bind(R.id.btn_screen, new Runnable() {
             @Override public void run() { openX11(true); }
         });
@@ -171,8 +165,6 @@ public class MainActivity extends Activity {
 
     private String label(String mode) {
         switch (mode) {
-            case "claude":     return getString(R.string.mode_claude);
-            case "chrome":     return getString(R.string.mode_chrome);
             case "win-claude": return getString(R.string.mode_win_claude);
             case "win-chrome": return getString(R.string.mode_win_chrome);
             default:           return getString(R.string.mode_desktop);

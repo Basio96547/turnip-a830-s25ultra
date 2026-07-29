@@ -13,16 +13,12 @@
     <string name="btn_win_claude">✦  Claude Desktop (ويندوز .exe)</string>
     <string name="btn_win_chrome">◉  Chrome (ويندوز .exe)</string>
     <string name="btn_desktop">▶  سطح المكتب الكامل</string>
-    <string name="btn_claude">✦  Claude PC</string>
-    <string name="btn_chrome">◉  كروم سطح المكتب</string>
     <string name="btn_screen">⛶  فتح شاشة العرض</string>
     <string name="btn_doctor">⚙  تشخيص النظام</string>
     <string name="btn_termux">›_  فتح Termux</string>
     <string name="btn_stop">■  إيقاف الكل</string>
 
     <string name="mode_desktop">سطح المكتب الكامل</string>
-    <string name="mode_claude">Claude PC</string>
-    <string name="mode_chrome">كروم سطح المكتب</string>
     <string name="mode_win_claude">Claude Desktop لويندوز</string>
     <string name="mode_win_chrome">Chrome لويندوز</string>
     <string name="win_first_run">أول تشغيل ينزّل المُثبّت الرسمي داخل بيئة ويندوز — قد يأخذ دقائق.</string>
@@ -47,6 +43,4 @@
     <string name="sc_win_claude">Claude (ويندوز)</string>
     <string name="sc_win_chrome">Chrome (ويندوز)</string>
     <string name="sc_desktop">سطح المكتب</string>
-    <string name="sc_claude">Claude PC</string>
-    <string name="sc_chrome">كروم</string>
 </resources>

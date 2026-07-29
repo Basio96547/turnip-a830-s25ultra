@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # ═══════════════════════════════════════════════════════════════════════
-#  s25-desktop — تشغيل سطح مكتب لينكس / Claude PC / كروم على الجوال
+#  s25-desktop — تشغيل برامج ويندوز (.exe) أو سطح مكتب لينكس على الجوال
 #  (سكربت مستقل — يُنسخ إلى $PREFIX/bin/s25-desktop)
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -22,23 +22,24 @@ XSOCK="$TMP/.X11-unix/X${XDISPLAY#:}"
 
 MODE="desktop"
 case "${1:-}" in
-    ""|desktop|claude|chrome|shell|win-claude|win-chrome|windows)
+    ""|desktop|shell|win-claude|win-chrome|windows)
         MODE="${1:-desktop}"
         if [ $# -gt 0 ]; then shift; fi
         ;;
     -h|--help)
         cat <<'EOF'
-الاستخدام: s25-desktop [desktop|claude|chrome|shell] [أوامر إضافية]
+الاستخدام: s25-desktop [win-claude|win-chrome|windows|desktop|shell] [أوامر إضافية]
 
-  desktop   سطح مكتب XFCE كامل (الافتراضي)
-  claude    تطبيق Claude PC وحده بملء الشاشة
-  chrome    كروم سطح المكتب وحده
-  shell     طرفية داخل الحاوية بدون واجهة رسومية
+  win-claude  Claude Desktop لويندوز (.exe) بملء الشاشة
+  win-chrome  Chrome لويندوز (.exe) بملء الشاشة
+  windows     winecfg — للتأكد أن طبقة ويندوز تعمل
+  desktop     سطح مكتب XFCE كامل (الافتراضي)
+  shell       طرفية داخل الحاوية بدون واجهة رسومية
 
 متغيرات مفيدة (أو عدّل $PREFIX/etc/s25-desktop.conf):
   S25_GPU=off     تعطيل Turnip واستخدام رسوميات المعالج
   S25_DPI=160     تكبير خطوط سطح المكتب
-  S25_SCALE=1.6   تكبير واجهة كروم/Claude
+  S25_SCALE=1.6   تكبير واجهة البرامج
 EOF
         exit 0 ;;
     *) die "وضع غير معروف: $1 (استخدم --help)" ;;
@@ -95,7 +96,8 @@ if grep -q '^s25:' "$ROOTFS/etc/passwd" 2>/dev/null; then
 fi
 
 ENV_PASS=""
-for v in S25_GPU S25_DPI S25_SCALE S25_CLAUDE_URL S25_CHROME_FLAGS TU_DEBUG; do
+for v in S25_GPU S25_DPI S25_SCALE S25_CHROME_FLAGS S25_WIN_REINSTALL \
+         S25_CLAUDE_SETUP_URL S25_CHROME_MSI_URL TU_DEBUG; do
     val="$(eval "printf '%s' \"\${$v:-}\"")"
     [ -n "$val" ] && ENV_PASS="$ENV_PASS $v=$(printf '%q' "$val")"
 done

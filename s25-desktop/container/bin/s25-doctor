@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 # ═══════════════════════════════════════════════════════════════════════
-#  s25-doctor — تشخيص نظام سطح المكتب (رسوميات، عرض، صوت، تطبيقات)
+#  s25-doctor — تشخيص النظام (رسوميات، عرض، صوت، طبقة ويندوز)
 # ═══════════════════════════════════════════════════════════════════════
 
 # shellcheck source=../etc/env.sh
@@ -81,19 +81,14 @@ else
     skip "الصوت" "لا اتصال بـ ${PULSE_SERVER:-PulseAudio}"
 fi
 
-head2 "التطبيقات"
-for app in chromium chrome-pc claude-pc claude-desktop claude node npm openbox xfce4-session; do
+head2 "الأدوات"
+for app in win-run claude-pc-win chrome-pc-win box64 openbox xfce4-session; do
     if command -v "$app" >/dev/null 2>&1; then
         pass "$app" "$(command -v "$app")"
     else
         skip "$app" "غير مثبت"
     fi
 done
-if [ -f /opt/s25/claude-pc/node_modules/electron/cli.js ]; then
-    pass "غلاف Claude PC" "Electron جاهز"
-else
-    skip "غلاف Claude PC" "غير مثبت"
-fi
 
 head2 "طبقة ويندوز (Wine + box64 + DXVK)"
 if [ -r /opt/s25/etc/windows.sh ]; then
@@ -138,7 +133,7 @@ if [ -r /opt/s25/etc/windows.sh ]; then
         skip "Chrome لويندوز" "غير مثبت — شغّل chrome-pc-win"
     fi
 else
-    skip "طبقة ويندوز" "غير مثبتة (bash s25-desktop/install.sh --with-windows)"
+    fail "طبقة ويندوز" "غير مثبتة — sudo bash /opt/s25/src/install-windows-layer.sh"
 fi
 
 head2 "التخزين"

@@ -24,10 +24,10 @@ S25_DPI="${S25_DPI:-140}"
 DISTRO_NAME="$( (. /etc/os-release && echo "$PRETTY_NAME") 2>/dev/null || echo "غير معروفة")"
 log "التوزيعة داخل الحاوية: $DISTRO_NAME"
 
-step "1/7 تحديث فهرس الحزم"
+step "1/6 تحديث فهرس الحزم"
 apt_refresh
 
-step "2/7 سطح مكتب XFCE والأدوات الأساسية"
+step "2/6 سطح مكتب XFCE والأدوات الأساسية"
 apt_install xfce4 xfce4-terminal dbus-x11 x11-xserver-utils xauth \
     sudo nano less curl wget ca-certificates gnupg locales \
     xdg-utils desktop-file-utils procps psmisc file
@@ -39,19 +39,7 @@ apt_install_soft openbox thunar-archive-plugin xarchiver \
     fonts-kacst fonts-hosny-amiri \
     mesa-vulkan-drivers libgl1-mesa-dri
 
-step "3/7 مكتبات تشغيل Chromium / Electron"
-# أسماء الحزم تغيّرت بين bookworm و trixie (لواحق t64) — نجرب البديلين
-apt_install_any libgtk-3-0t64 libgtk-3-0
-apt_install_any libasound2t64 libasound2
-apt_install_any libatk1.0-0t64 libatk1.0-0
-apt_install_any libatk-bridge2.0-0t64 libatk-bridge2.0-0
-apt_install_any libcups2t64 libcups2
-apt_install_soft libnss3 libnspr4 libxkbcommon0 libxcomposite1 libxdamage1 \
-    libxrandr2 libxfixes3 libxext6 libxss1 libdrm2 libgbm1 \
-    libpangocairo-1.0-0 libcairo2 libexpat1 libsecret-1-0 libudev1 \
-    libglib2.0-0 libxshmfence1
-
-step "4/7 اللغات (عربي + إنجليزي)"
+step "3/6 اللغات (عربي + إنجليزي)"
 if [ -f /etc/locale.gen ]; then
     sed -i 's/^# *\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen
     sed -i 's/^# *\(ar_SA.UTF-8 UTF-8\)/\1/' /etc/locale.gen
@@ -61,7 +49,7 @@ update-locale LANG=en_US.UTF-8 >/dev/null 2>&1 || \
     printf 'LANG=en_US.UTF-8\n' > /etc/default/locale
 ok "en_US.UTF-8 + ar_SA.UTF-8"
 
-step "5/7 المستخدم $S25_USER"
+step "4/6 المستخدم $S25_USER"
 if id -u "$S25_USER" >/dev/null 2>&1; then
     ok "المستخدم موجود مسبقاً"
 else
@@ -82,7 +70,7 @@ S25_HOME="${S25_HOME:-/home/$S25_USER}"
 mkdir -p /var/lib/dbus
 [ -s /var/lib/dbus/machine-id ] || cp /etc/machine-id /var/lib/dbus/machine-id 2>/dev/null || true
 
-step "6/7 تثبيت أدوات النظام في /opt/s25"
+step "5/6 تثبيت أدوات النظام في /opt/s25"
 install -d /opt/s25/bin /opt/s25/etc /opt/s25/share
 for f in "$SRC_DIR/bin/"*; do
     [ -f "$f" ] || continue
@@ -94,12 +82,61 @@ if [ -f "$SRC_DIR/share/claude-pc.svg" ]; then
     install -Dm644 "$SRC_DIR/share/claude-pc.svg" \
         /usr/share/icons/hicolor/scalable/apps/claude-pc.svg
 fi
-for b in s25-session s25-app s25-doctor chrome-pc claude-pc; do
+for b in s25-session s25-app s25-doctor win-run claude-pc-win chrome-pc-win; do
     ln -sf "/opt/s25/bin/$b" "/usr/local/bin/$b"
 done
-ok "الأوامر: s25-doctor, chrome-pc, claude-pc"
 
-step "7/7 إعدادات سطح المكتب لشاشة S25 Ultra"
+# مدخلات قائمة التطبيقات لبرامج ويندوز
+cat > /usr/share/applications/claude-pc-win.desktop <<'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Claude Desktop (ويندوز)
+Name[en]=Claude Desktop (Windows)
+Comment=نسخة ويندوز الرسمية عبر Wine + box64
+Exec=/opt/s25/bin/claude-pc-win
+Icon=claude-pc
+Terminal=false
+StartupNotify=true
+Categories=Network;Development;Utility;
+EOF
+cat > /usr/share/applications/chrome-pc-win.desktop <<'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Google Chrome (ويندوز)
+Name[en]=Google Chrome (Windows)
+Comment=نسخة ويندوز الرسمية عبر Wine + box64 + DXVK
+Exec=/opt/s25/bin/chrome-pc-win %U
+Icon=web-browser
+Terminal=false
+StartupNotify=true
+Categories=Network;WebBrowser;
+MimeType=text/html;x-scheme-handler/http;x-scheme-handler/https;
+EOF
+cat > /usr/share/applications/winecfg-s25.desktop <<'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=إعدادات ويندوز (winecfg)
+Name[en]=Windows settings (winecfg)
+Exec=/opt/s25/bin/win-run winecfg
+Icon=preferences-system
+Terminal=false
+Categories=Settings;
+EOF
+update-desktop-database >/dev/null 2>&1 || true
+
+if [ -d "$S25_HOME" ]; then
+    install -d -o "$S25_USER" -g "$S25_USER" "$S25_HOME/Desktop"
+    for d in claude-pc-win chrome-pc-win; do
+        install -m755 -o "$S25_USER" -g "$S25_USER" \
+            "/usr/share/applications/$d.desktop" "$S25_HOME/Desktop/$d.desktop"
+    done
+fi
+ok "الأوامر: s25-doctor · win-run · claude-pc-win · chrome-pc-win"
+
+step "6/6 إعدادات سطح المكتب لشاشة S25 Ultra"
 XFCONF="$S25_HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
 install -d -o "$S25_USER" -g "$S25_USER" "$XFCONF" "$S25_HOME/Desktop" "$S25_HOME/.cache"
 
@@ -168,4 +205,4 @@ fi
 ok "تمت تهيئة الحاوية"
 printf '\n  المستخدم    : %s (بدون كلمة مرور، sudo مسموح)\n' "$S25_USER"
 printf '  سطح المكتب  : XFCE (%s)\n' "$(dpkg-query -W -f='${Version}' xfce4-session 2>/dev/null || echo "?")"
-printf '  الأوامر     : s25-doctor · chrome-pc · claude-pc\n\n'
+printf '  الأوامر     : s25-doctor · win-run · claude-pc-win · chrome-pc-win\n\n'

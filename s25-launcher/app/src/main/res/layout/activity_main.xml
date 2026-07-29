@@ -59,15 +59,7 @@
             android:layout_marginBottom="6dp"
             android:background="@color/card" />
 
-        <Button
-            android:id="@+id/btn_claude"
-            style="@style/ActionButton"
-            android:text="@string/btn_claude" />
 
-        <Button
-            android:id="@+id/btn_chrome"
-            style="@style/ActionButton"
-            android:text="@string/btn_chrome" />
 
         <Button
             android:id="@+id/btn_desktop"

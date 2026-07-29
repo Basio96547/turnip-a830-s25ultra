@@ -14,11 +14,8 @@ DISTRO="debian"
 JOBS=""
 MESA_REF="main"
 MESA_TARBALL=""
-CLAUDE_MODE="auto"
 SKIP_MESA=0
-SKIP_CHROMIUM=0
-SKIP_CLAUDE=0
-WITH_WINDOWS=0
+SKIP_WINDOWS=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -26,11 +23,8 @@ while [ $# -gt 0 ]; do
         --jobs)            JOBS="${2:?}"; shift 2 ;;
         --mesa-ref)        MESA_REF="${2:?}"; shift 2 ;;
         --mesa-tarball)    MESA_TARBALL="${2:?}"; shift 2 ;;
-        --claude-mode)     CLAUDE_MODE="${2:?}"; shift 2 ;;
         --skip-mesa)       SKIP_MESA=1; shift ;;
-        --skip-chromium)   SKIP_CHROMIUM=1; shift ;;
-        --skip-claude)     SKIP_CLAUDE=1; shift ;;
-        --with-windows)    WITH_WINDOWS=1; shift ;;
+        --skip-windows)    SKIP_WINDOWS=1; shift ;;
         *) die "خيار غير معروف: $1" ;;
     esac
 done
@@ -112,25 +106,11 @@ else
         || warn "فشل بناء Mesa — سيعمل النظام بالمعالج فقط (راجع docs/TROUBLESHOOTING.md)"
 fi
 
-if [ "$SKIP_CHROMIUM" = 1 ]; then
-    warn "تخطي تثبيت Chromium بناءً على طلبك"
+if [ "$SKIP_WINDOWS" = 1 ]; then
+    warn "تخطي طبقة ويندوز بناءً على طلبك — لن تعمل ملفات .exe"
 else
-    step "تثبيت كروم سطح المكتب (Chromium arm64)"
-    plogin "bash /opt/s25/src/install-chromium.sh" \
-        || warn "فشل تثبيت Chromium"
-fi
-
-if [ "$SKIP_CLAUDE" = 1 ]; then
-    warn "تخطي تثبيت Claude PC بناءً على طلبك"
-else
-    step "تثبيت Claude PC + Claude Code CLI"
-    plogin "bash /opt/s25/src/install-claude-desktop.sh --mode '$CLAUDE_MODE'" \
-        || warn "فشل تثبيت Claude PC"
-fi
-
-if [ "$WITH_WINDOWS" = 1 ]; then
     step "تثبيت طبقة ويندوز (Wine + box64 + DXVK)"
-    warn "تنزيل ~1.5 غيغابايت وقد يأخذ وقتاً طويلاً"
+    warn "تنزيل ~1.5 غيغابايت وقد يأخذ 20–40 دقيقة"
     plogin "S25_ASSUME_YES=1 bash /opt/s25/src/install-windows-layer.sh" \
         || warn "فشل تثبيت طبقة ويندوز — راجع docs/WINDOWS.md"
 fi
@@ -145,19 +125,10 @@ cat > "$PREFIX/etc/s25-desktop.conf" <<EOF
 S25_DISTRO=$DISTRO
 # S25_GPU=auto        # auto | off  (off = رسوميات بالمعالج)
 # S25_DPI=140         # كثافة النقاط داخل سطح المكتب
-# S25_SCALE=1.4       # تكبير واجهة كروم/Claude
+# S25_SCALE=1.4       # تكبير واجهة البرامج
 # TU_DEBUG=sysmem     # مطلوب لـ A830 (GMEM يسبب تعليق الـ GPU)
 EOF
 ok "s25-desktop و s25-stop جاهزان"
 
-# اختصارات Termux:Widget (اختياري — تظهر كأيقونات على الشاشة الرئيسية)
-if [ -d "$S25_DIR/termux/shortcuts" ]; then
-    mkdir -p "$HOME/.shortcuts"
-    for f in "$S25_DIR/termux/shortcuts/"*.sh; do
-        [ -r "$f" ] || continue
-        install -m700 "$f" "$HOME/.shortcuts/$(basename "$f")"
-    done
-    ok "اختصارات Termux:Widget في ~/.shortcuts"
-fi
 
 ok "اكتملت تهيئة الحاوية"

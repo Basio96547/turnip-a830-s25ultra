@@ -21,15 +21,18 @@
 
 أو استخدم الروابط المباشرة في [الدليل العربي](دليل-تثبيت-تيرنِب-830.html).
 
-## 🖥️ جديد: نظام سطح مكتب كامل على الجوال (Claude PC + كروم الكمبيوتر)
+## 🖥️ جديد: تشغيل برامج ويندوز (.exe) على الجوال
 
-مجلد [`s25-desktop/`](s25-desktop/) يحوّل الجهاز إلى كمبيوتر لينكس حقيقي يستفيد من
-تعريف Turnip المبني هنا — **بدون روت**:
+مجلد [`s25-desktop/`](s25-desktop/) يشغّل **Claude Desktop لويندوز** و**Chrome
+لويندوز** — ملفات `.exe` الرسمية — على الجهاز مستفيداً من تعريف Turnip المبني
+هنا، **بدون روت**:
+
+```
+.exe → Wine → box64 (x86_64→ARM64) → DXVK (D3D→Vulkan) → Turnip → Adreno 830
+```
 
 - حاوية **Debian arm64** بسطح مكتب **XFCE** داخل Termux (proot) وعرض عبر Termux:X11
-- **Claude PC** — تطبيق سطح مكتب بنافذة وأيقونة مستقلة (حزمة المجتمع أو غلاف Electron)
-- **كروم سطح المكتب** (Chromium arm64) بتسريع GPU عبر ANGLE ⇢ Vulkan ⇢ Turnip
-- **Claude Code CLI** الرسمي داخل الطرفية
+- طبقة ويندوز: **Wine + box64 + DXVK** وبيئة ويندوز جاهزة
 - بناء Mesa بنسخة **glibc** (Turnip/KGSL + Zink) لأن تعريف أندرويد لا يعمل داخل الحاوية
 
 ```bash
@@ -38,22 +41,23 @@ git clone https://github.com/basio96547/turnip-a830-s25ultra
 cd turnip-a830-s25ultra
 bash s25-desktop/install.sh          # أو: --mesa-tarball <حزمة من Actions> للتثبيت السريع
 
-s25-desktop            # سطح مكتب كامل
-s25-desktop claude     # Claude PC بملء الشاشة
-s25-desktop chrome     # كروم سطح المكتب
+s25-desktop win-claude   # Claude Desktop لويندوز
+s25-desktop win-chrome   # Chrome لويندوز
+s25-desktop windows      # winecfg — للتأكد أن الطبقة تعمل
 ```
 
 ### 📱 تطبيق يفتح النظام بضغطة واحدة
 
-مجلد [`s25-launcher/`](s25-launcher/) فيه تطبيق أندرويد (~26 كيلوبايت) يضع أيقونة على
-الشاشة الرئيسية تشغّل النظام وتنقلك إلى شاشة العرض تلقائياً — بدون كتابة أوامر:
+مجلد [`s25-launcher/`](s25-launcher/) فيه تطبيق أندرويد (~32 كيلوبايت) يضع أيقونة على
+الشاشة الرئيسية تشغّل البرنامج وتنقلك إلى شاشة العرض تلقائياً — بدون كتابة أوامر:
 
 **الحزمة الجاهزة:** [`s25-launcher/prebuilt/S25-Desktop-launcher.apk`](s25-launcher/prebuilt/S25-Desktop-launcher.apk)
 
-الضغط الطويل على الأيقونة يعطي اختصارات مباشرة (Claude PC · كروم · سطح المكتب)
-يمكن سحبها كأيقونات مستقلة.
+الضغط الطويل على الأيقونة يعطي اختصارات مباشرة (Claude ويندوز · Chrome ويندوز ·
+سطح المكتب) يمكن سحبها كأيقونات مستقلة.
 
 📖 الدليل الكامل: [s25-desktop/docs/README.md](s25-desktop/docs/README.md) ·
+طبقة ويندوز: [WINDOWS.md](s25-desktop/docs/WINDOWS.md) ·
 التطبيق: [s25-launcher/README.md](s25-launcher/README.md) ·
 حل المشاكل: [TROUBLESHOOTING.md](s25-desktop/docs/TROUBLESHOOTING.md)
 
@@ -87,11 +91,12 @@ chmod +x build-turnip-a830.sh
 ├── fix_a830_dev_info.py          # إصلاح fd_dev_info.h
 ├── patches-a830/
 │   └── adreno_830v2.patch        # باتش التخصيص لـ A830v2
-├── s25-desktop/                  # نظام سطح المكتب: Claude PC + كروم على الجوال
+├── s25-desktop/                  # تشغيل برامج ويندوز (.exe) على الجوال
 │   ├── install.sh                #   المُثبّت (يعمل داخل Termux)
 │   ├── termux/                   #   X11 + صوت + proot-distro + أوامر التشغيل
-│   ├── container/                #   XFCE + Mesa glibc + Chromium + Claude PC
-│   └── docs/                     #   الدليل وحل المشاكل
+│   ├── container/                #   XFCE + Mesa glibc + Wine/box64/DXVK
+│   └── docs/                     #   الدليل وطبقة ويندوز وحل المشاكل
+├── s25-launcher/                 # تطبيق أندرويد يفتح النظام بضغطة واحدة
 ├── .github/workflows/
 │   ├── build-turnip-a830.yml     # بناء تعريف أندرويد للمحاكيات
 │   ├── build-mesa-glibc-arm64.yml# بناء Mesa لحاويات proot (glibc)

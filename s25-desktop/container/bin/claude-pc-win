@@ -8,7 +8,7 @@ set -euo pipefail
 #  ما بعده  : يشغّل claude.exe مباشرة.
 #
 #  ⚠️ Claude Desktop تطبيق Electron، وهو من أصعب ما يُشغَّل على Wine. إن لم
-#  يعمل أو كان بطيئاً جداً فاستخدم النسخة الأصلية للينكس: claude-pc
+#  يعمل فراجع سلّم الحلول في docs/WINDOWS.md (بدون DXVK ← بدون GPU ← بناء Wine آخر)
 #
 #  متغيرات:
 #    S25_CLAUDE_SETUP_URL=…   رابط مُثبّت بديل (أو مسار ملف محلي)
@@ -58,7 +58,6 @@ case "$SETUP_URL" in
   الحلول:
    • نزّل Claude-Setup-x64.exe يدوياً من claude.ai/download على الجوال، ثم:
        S25_CLAUDE_SETUP_URL=/mnt/sdcard/Download/Claude-Setup-x64.exe claude-pc-win
-   • أو استخدم نسخة لينكس الأسرع:  claude-pc
 EOF
                 exit 1
             fi
@@ -80,7 +79,7 @@ if [ -z "$CLAUDE_EXE" ]; then
 ✗ لم يُعثر على claude.exe بعد التثبيت.
   للتشخيص:  win-run winecfg    (هل تعمل طبقة ويندوز أصلاً؟)
              ls "$WINEPREFIX/drive_c/users"
-  البديل الذي يعمل بأداء أعلى:  claude-pc
+  راجع: s25-desktop/docs/WINDOWS.md
 EOF
     exit 1
 fi

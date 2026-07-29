@@ -28,7 +28,6 @@ export XDG_CURRENT_DESKTOP="${XDG_CURRENT_DESKTOP:-XFCE}"
 export GDK_BACKEND=x11
 export QT_QPA_PLATFORM=xcb
 export LANG="${LANG:-en_US.UTF-8}"
-export BROWSER="${BROWSER:-/opt/s25/bin/chrome-pc}"
 
 export S25_DPI="${S25_DPI:-140}"
 export S25_SCALE="${S25_SCALE:-1.4}"

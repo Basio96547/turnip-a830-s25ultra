@@ -85,48 +85,6 @@ bash s25-desktop/install.sh --mesa-tarball ~/storage/downloads/mesa-a830-glibc-a
 
 ---
 
-## كروم لا يفتح / يُغلق فوراً
-
-```bash
-chrome-pc 2>&1 | tail -30
-```
-
-| الرسالة | الحل |
-|---------|------|
-| `Running as root without --no-sandbox` | شغّله كمستخدم `s25` (التشغيل الطبيعي يفعل ذلك) |
-| `Failed to create GPU process` | `S25_GPU=off chrome-pc` — ثم افحص Turnip بـ `s25-doctor` |
-| `bus error` / انهيار عشوائي | `S25_CHROME_FLAGS="--single-process"` كحل مؤقت |
-| النص صغير جداً | `S25_SCALE=1.8 chrome-pc` |
-| `/dev/shm` صغير | العلم `--disable-dev-shm-usage` مضبوط أصلاً؛ تأكد من استخدام `chrome-pc` لا `chromium` مباشرة |
-
-معلومات الرسوميات الحقيقية: افتح `chrome://gpu` داخل كروم.
-
----
-
-## Claude PC لا يفتح
-
-```bash
-claude-pc 2>&1 | tail -30
-```
-
-- **`غلاف Claude PC غير مثبت`**:
-  ```bash
-  sudo bash /opt/s25/src/install-claude-desktop.sh --mode wrapper
-  ```
-- **فشل تنزيل Electron** (حجب/بطء):
-  ```bash
-  export ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
-  sudo -E bash /opt/s25/src/install-claude-desktop.sh --mode wrapper
-  ```
-  أو ثبّت نسخة محددة: `S25_ELECTRON_VERSION=33.4.11`
-- **فشل حزمة المجتمع**: طبيعي إن غيّرت Anthropic ملفات المُثبّت — استخدم
-  `--mode wrapper`، والوظائف الأساسية (المحادثة، المشاريع، الملفات) تعمل.
-- **تسجيل الدخول بجوجل لا يكتمل**: الغلاف يعرّف نفسه كـ Chrome على لينكس؛ إن
-  رفضت جوجل النافذة، سجّل بالبريد وكلمة المرور أو برابط تسجيل الدخول من البريد.
-- **الشاشة بيضاء**: `S25_GPU=off claude-pc` للتأكد إن كانت المشكلة من الـ GPU.
-
----
-
 ## لا يوجد صوت
 
 ```bash
@@ -155,7 +113,7 @@ pactl info
 
 1. تأكد أن `s25-doctor` يظهر `turnip` لا `software`.
 2. أوقف التركيب في XFCE (مضبوط افتراضياً): `Settings ▸ Window Manager Tweaks ▸ Compositor`.
-3. استخدم وضع التطبيق الواحد بدل سطح المكتب: `s25-desktop claude` / `s25-desktop chrome`.
+3. استخدم وضع التطبيق الواحد بدل سطح المكتب: `s25-desktop win-claude` / `s25-desktop win-chrome`.
 4. أوقف حفظ الجلسة في XFCE: `Settings ▸ Session and Startup ▸ Save session on logout` = مُعطّل.
 5. `s25-stop` بين الجلسات لتحرير الذاكرة.
 

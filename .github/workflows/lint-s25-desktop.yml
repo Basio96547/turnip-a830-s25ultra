@@ -38,18 +38,13 @@ jobs:
 
       - name: shellcheck
         run: |
+          # SC1091: لا يمكن تتبّع ملفات تُقرأ في وقت التشغيل (env.sh داخل الحاوية)
+          # SC2154: متغيرات تأتي من تلك الملفات
           shellcheck --severity=warning --external-sources \
+            --exclude=SC1091,SC2154 \
             s25-desktop/install.sh \
             s25-desktop/lib/common.sh \
             s25-desktop/termux/*.sh \
-            s25-desktop/termux/shortcuts/*.sh \
             s25-desktop/container/*.sh \
             s25-desktop/container/bin/* \
             s25-desktop/container/etc/*.sh
-
-      - name: فحص ملفات JavaScript و JSON
-        run: |
-          node --check s25-desktop/container/claude-pc-app/main.js
-          node --check s25-desktop/container/claude-pc-app/preload.js
-          node -e "JSON.parse(require('fs').readFileSync('s25-desktop/container/claude-pc-app/package.json','utf8'))"
-          echo "✓ JS/JSON سليمة"
