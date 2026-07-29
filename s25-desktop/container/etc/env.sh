@@ -66,7 +66,7 @@ else
     # ── احتياطي: رسوميات على المعالج (llvmpipe/lavapipe من حزم التوزيعة) ──
     export S25_GPU_ACTIVE=software
     export LIBGL_ALWAYS_SOFTWARE=1
-    unset MESA_LOADER_DRIVER_OVERRIDE GALLIUM_DRIVER VK_DRIVER_FILES VK_ICD_FILENAMES 2>/dev/null || true
+    unset MESA_LOADER_DRIVER_OVERRIDE GALLIUM_DRIVER VK_DRIVER_FILES VK_ICD_FILENAMES
 fi
 
-unset _s25_f _s25_icd 2>/dev/null || true
+unset _s25_f _s25_icd

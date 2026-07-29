@@ -22,13 +22,9 @@ const CHROME_UA =
   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ' +
   'Chrome/141.0.0.0 Safari/537.36';
 
-// المضيفون الذين نسمح بفتحهم داخل التطبيق (بقية الروابط تُفتح في كروم)
-const INTERNAL_HOSTS = new Set([
-  'claude.ai', 'www.claude.ai',
-  'claude.com', 'www.claude.com',
-  'anthropic.com', 'www.anthropic.com',
-  'console.anthropic.com',
-  'auth.anthropic.com',
+// مضيفو تسجيل الدخول الخارجيون المسموح بهم داخل التطبيق.
+// نطاقات claude.ai / claude.com / anthropic.com تُطابَق بالتعبير في isInternal.
+const AUTH_HOSTS = new Set([
   'accounts.google.com',
   'accounts.youtube.com',
   'appleid.apple.com',
@@ -93,8 +89,8 @@ function hostOf(url) {
 function isInternal(url) {
   const h = hostOf(url);
   if (!h) return false;
-  if (INTERNAL_HOSTS.has(h)) return true;
-  // نطاقات فرعية لـ claude.ai / anthropic.com
+  if (AUTH_HOSTS.has(h)) return true;
+  // نطاقات claude.ai / claude.com / anthropic.com وفروعها فقط
   return /(^|\.)((claude\.(ai|com))|anthropic\.com)$/.test(h);
 }
 

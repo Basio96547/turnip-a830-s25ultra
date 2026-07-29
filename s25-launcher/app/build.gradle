@@ -12,7 +12,6 @@ android {
         targetSdk 34
         versionCode 1
         versionName '1.0'
-        resourceConfigurations += ['ar', 'en']
     }
 
     signingConfigs {
@@ -25,14 +24,10 @@ android {
         }
     }
 
+    // نبني نسخة debug فقط: هي القابلة للتثبيت يدوياً بلا مفتاح إصدار
     buildTypes {
         debug {
             minifyEnabled false
-            signingConfig signingConfigs.debug
-        }
-        release {
-            minifyEnabled false
-            // بدون توقيع إصدار — نبني نسخة debug القابلة للتثبيت مباشرة
             signingConfig signingConfigs.debug
         }
     }
@@ -47,6 +42,5 @@ android {
     }
 }
 
-// لا توجد اعتماديات خارجية إطلاقاً — نستخدم واجهات أندرويد الأساسية فقط،
-// لتبقى الحزمة صغيرة (~60 كيلوبايت) والبناء بلا مفاجآت.
-dependencies { }
+// بلا كتلة dependencies: التطبيق يستخدم واجهات أندرويد الأساسية فقط،
+// فتبقى الحزمة ~29 كيلوبايت والبناء بلا مفاجآت.

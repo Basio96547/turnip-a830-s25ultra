@@ -33,7 +33,6 @@ FLAGS=(
     --no-sandbox                 # proot لا يوفر user namespaces
     --disable-dev-shm-usage
     --password-store=basic
-    --disable-gpu-sandbox
     --force-device-scale-factor="$S25_SCALE"
     --user-data-dir="$HOME/.config/chrome-pc"
     --disk-cache-size=268435456
@@ -43,6 +42,7 @@ if [ "$S25_GPU_ACTIVE" = "turnip" ]; then
     FLAGS+=(
         --use-gl=angle
         --use-angle=vulkan
+        --disable-gpu-sandbox
         --ignore-gpu-blocklist
         --enable-gpu-rasterization
         --enable-accelerated-2d-canvas
