@@ -55,14 +55,32 @@ jobs:
       - name: معلومات الحزمة
         id: apk
         run: |
-          APK="s25-launcher/app/build/outputs/apk/debug/app-debug.apk"
-          [ -f "$APK" ] || { echo "❌ لم يتم إنتاج APK"; exit 1; }
-          OUT="S25-Desktop-launcher.apk"
-          cp "$APK" "$OUT"
-          ls -lh "$OUT"
+          BUILT="s25-launcher/app/build/outputs/apk/debug/app-debug.apk"
+          [ -f "$BUILT" ] || { echo "❌ لم يتم إنتاج APK"; exit 1; }
           AAPT="$ANDROID_HOME/build-tools/34.0.0/aapt2"
+          APKSIGNER="$ANDROID_HOME/build-tools/34.0.0/apksigner"
+
+          # الحزمة المنشورة هي الملف المعتمد في المستودع، لا ناتج CI:
+          # مفتاح debug يُولَّد لكل جهاز بناء، فلو نشرنا ناتج CI لاختلف التوقيع عن
+          # الحزمة الموجودة في المستودع وفشل التثبيت فوقها برسالة «التطبيق غير مثبت».
+          # بناء CI يبقى مفيداً: يتحقق أن المصدر يُترجم بلا أخطاء.
+          PREBUILT="s25-launcher/prebuilt/S25-Desktop-launcher.apk"
+          OUT="S25-Desktop-launcher.apk"
+          if [ -f "$PREBUILT" ]; then
+            cp "$PREBUILT" "$OUT"
+            echo "📦 سيتم نشر الحزمة المعتمدة من المستودع"
+          else
+            cp "$BUILT" "$OUT"
+            echo "📦 لا توجد حزمة معتمدة — سيتم نشر ناتج CI"
+          fi
+
+          ls -lh "$OUT"
+          sha256sum "$OUT" | tee sha256.txt
           "$AAPT" dump badging "$OUT" | grep -E "^package:|uses-permission|launchable-activity" || true
+          "$APKSIGNER" verify -v --print-certs "$OUT" | grep -E "Verifies|scheme|certificate SHA-256" || true
+
           echo "apk=$OUT" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(cut -d' ' -f1 sha256.txt)" >> "$GITHUB_OUTPUT"
           echo "version=$("$AAPT" dump badging "$OUT" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")" >> "$GITHUB_OUTPUT"
 
       - name: رفع الحزمة كـ artifact
@@ -98,7 +116,14 @@ jobs:
             echo '   ```'
             echo "4. افتح التطبيق واضغط الزر الذي تريده"
             echo ""
-            echo "> الحزمة موقّعة بمفتاح debug (كافٍ للتثبيت اليدوي، غير مناسب لمتجر Play)."
+            echo "## التحقق من الملف"
+            echo '```'
+            echo "sha256  ${{ steps.apk.outputs.sha256 }}"
+            echo '```'
+            echo ""
+            echo "> الحزمة موقّعة بمفتاح debug بمخططَي v2 و v3 (كافٍ للتثبيت اليدوي،"
+            echo "> غير مناسب لمتجر Play). إن كانت لديك نسخة أقدم من هذا التطبيق"
+            echo "> فأزلها قبل التثبيت — تواقيع debug تختلف بين نسخ البناء."
           } > "$NOTES"
 
           gh release create "$TAG" \
