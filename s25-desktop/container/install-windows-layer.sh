@@ -20,7 +20,7 @@ set -euo pipefail
 #
 #  الاستخدام (داخل الحاوية كـ root):
 #     bash /opt/s25/src/install-windows-layer.sh [خيارات]
-#       --wine-url <url>     تحديد بناء Wine (افتراضي: أحدث بناء amd64)
+#       --wine-url <url>     بناء Wine (افتراضي: أحدث amd64-wow64 — إلزامي لـ 32-بت)
 #       --dxvk-url <url>     تحديد إصدار DXVK
 #       --no-dxvk            بدون DXVK (استخدام WineD3D فوق OpenGL/Zink)
 #       --prefix-only        إعادة إنشاء بيئة ويندوز فقط
@@ -50,7 +50,14 @@ WITH_DXVK=1
 PREFIX_ONLY=0
 S25_USER="${S25_USER:-s25}"
 
-WINE_FALLBACK_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/9.0/wine-9.0-amd64.tar.xz"
+# ⚠ يجب أن يكون بناء «amd64-wow64» تحديداً (WoW64 الجديد):
+#   • wine-*-amd64.tar.xz        → bin/wine ملف ELF 32-بت، فتشغيل أي برنامج
+#                                  ويندوز 32-بت يحتاج box86 (غير مثبت هنا)
+#   • wine-*-amd64-wow64.tar.xz  → bin/wine ملف ELF 64-بت ولا يوجد wine64،
+#                                  فبرامج 32-بت تعمل عبر مُحمّل 64-بت → box64 يكفي
+# وهذا مهم عملياً: مُثبّت Claude لويندوز (Claude-Setup-x64.exe) ملف 32-بت.
+WINE_FALLBACK_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/10.13/wine-10.13-staging-amd64-wow64.tar.xz"
+DXVK_FALLBACK_URL="https://github.com/doitsujin/dxvk/releases/download/v2.5.3/dxvk-2.5.3.tar.gz"
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -82,14 +89,15 @@ if [ "$PREFIX_ONLY" = 0 ]; then
     install_amd64_runtime_libs
     ok "مكتبات amd64 جاهزة"
 
-    step "3/6 تنزيل Wine (بناء x86_64)"
+    step "3/6 تنزيل Wine (بناء amd64-wow64)"
     mkdir -p "$DL_DIR"
     if [ -z "$WINE_URL" ]; then
-        WINE_URL="$(latest_asset Kron4ek/Wine-Builds '\-amd64\.tar\.xz' || true)"
+        WINE_URL="$(latest_asset Kron4ek/Wine-Builds 'staging\-amd64\-wow64\.tar\.xz' || true)"
+        [ -n "$WINE_URL" ] || WINE_URL="$(latest_asset Kron4ek/Wine-Builds '\-amd64\-wow64\.tar\.xz' || true)"
         [ -n "$WINE_URL" ] || WINE_URL="$WINE_FALLBACK_URL"
     fi
     log "المصدر: $WINE_URL"
-    apt_install xz-utils tar curl
+    apt_install xz-utils tar curl file
     WINE_TAR="$DL_DIR/$(basename "$WINE_URL")"
     if [ ! -s "$WINE_TAR" ]; then
         retry 4 curl -fL "$WINE_URL" -o "$WINE_TAR" || die "فشل تنزيل Wine"
@@ -97,8 +105,18 @@ if [ "$PREFIX_ONLY" = 0 ]; then
     rm -rf "$WINE_DIR"
     mkdir -p "$WINE_DIR"
     tar -xf "$WINE_TAR" -C "$WINE_DIR" --strip-components=1
-    [ -x "$WINE_DIR/bin/wine64" ] || [ -x "$WINE_DIR/bin/wine" ] \
+    [ -x "$WINE_DIR/bin/wine" ] || [ -x "$WINE_DIR/bin/wine64" ] \
         || die "بناء Wine لا يحتوي bin/wine"
+
+    # التحقق من نوع WoW64: مُحمّل 32-بت يعني أننا نحتاج box86 وهو غير مدعوم هنا
+    if file -L "$WINE_DIR/bin/wine" 2>/dev/null | grep -q 'ELF 32-bit'; then
+        warn "هذا بناء WoW64 القديم (bin/wine ملف 32-بت)."
+        warn "برامج ويندوز 32-بت — ومنها مُثبّت Claude — تحتاج box86 ولن تعمل."
+        warn "استخدم بناء amd64-wow64:"
+        warn "  --wine-url $WINE_FALLBACK_URL"
+    else
+        ok "بناء WoW64 الجديد ✓ (برامج 32-بت تعمل عبر box64 وحده)"
+    fi
     ok "Wine في $WINE_DIR ($(du -sh "$WINE_DIR" | cut -f1))"
 fi
 
@@ -114,10 +132,11 @@ export WINEARCH="${WINEARCH:-win64}"
 export WINEDEBUG="${WINEDEBUG:--all}"
 export WINEDLLPATH="$S25_WIN_ROOT/wine/lib/wine"
 
-if [ -x "$S25_WIN_ROOT/wine/bin/wine64" ]; then
-    S25_WINE="$S25_WIN_ROOT/wine/bin/wine64"
-else
+# بناء amd64-wow64 لا يحتوي wine64 إطلاقاً، و bin/wine فيه 64-بت — وهو المطلوب
+if [ -x "$S25_WIN_ROOT/wine/bin/wine" ]; then
     S25_WINE="$S25_WIN_ROOT/wine/bin/wine"
+else
+    S25_WINE="$S25_WIN_ROOT/wine/bin/wine64"
 fi
 export S25_WINE
 
@@ -154,7 +173,7 @@ if [ -d "$WINEPREFIX_DIR/drive_c" ] && [ "$PREFIX_ONLY" = 0 ]; then
 else
     [ "$PREFIX_ONLY" = 1 ] && rm -rf "$WINEPREFIX_DIR"
     install -d -o "$S25_USER" -g "$S25_USER" "$WINEPREFIX_DIR"
-    log "تهيئة أولية (wineboot) — قد تأخذ عدة دقائق على الجوال…"
+    log "تهيئة أولية (wineboot) — 10 إلى 30 دقيقة على الجوال. لا تقطعها."
     if su - "$S25_USER" -c "cd /tmp && . /opt/s25/etc/env.sh && . /opt/s25/etc/windows.sh && \
         DISPLAY= box64 \"\$S25_WINE\" wineboot -u" >/tmp/wineboot.log 2>&1; then
         ok "تم إنشاء بيئة ويندوز في $WINEPREFIX_DIR"
@@ -173,6 +192,7 @@ if [ "$WITH_DXVK" = 0 ]; then
 else
     if [ -z "$DXVK_URL" ]; then
         DXVK_URL="$(latest_asset doitsujin/dxvk 'dxvk-[0-9.]*\.tar\.gz' || true)"
+        [ -n "$DXVK_URL" ] || DXVK_URL="$DXVK_FALLBACK_URL"
     fi
     if [ -z "$DXVK_URL" ]; then
         warn "لم يتم العثور على إصدار DXVK — سيعمل النظام بـ WineD3D"

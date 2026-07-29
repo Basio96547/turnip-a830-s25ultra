@@ -30,13 +30,32 @@
 **ليست محاكاة ويندوز كاملة**: Wine يترجم نداءات ويندوز إلى نداءات لينكس، فلا
 يوجد نظام ويندوز داخل الجوال ولا حاجة لترخيص. هذا نفس مبدأ عمل Winlator.
 
+### لماذا بناء `amd64-wow64` تحديداً؟
+
+هذه أهم نقطة تقنية في الطبقة كلها، وقد تحققنا منها عملياً:
+
+| بناء Wine | `bin/wine` | برامج ويندوز 32-بت |
+|-----------|-----------|---------------------|
+| `wine-*-amd64.tar.xz` | ELF **32-بت** | تحتاج **box86** — لا تعمل هنا |
+| `wine-*-amd64-wow64.tar.xz` | ELF **64-بت** (بلا `wine64`) | تعمل عبر مُحمّل 64-بت → **box64 وحده يكفي** ✓ |
+
+ولماذا يهم؟ لأن **مُثبّت Claude لويندوز (`Claude-Setup-x64.exe`) ملف 32-بت** رغم
+اسمه — تحقّقنا: `PE32 executable (GUI) Intel 80386`. فلو استُخدم البناء الأول لما
+عمل المُثبّت إطلاقاً على الجوال.
+
+السكربت يختار البناء الصحيح تلقائياً، ويحذّرك إن انتهى بك بناء قديم:
+
+```
+⚠ هذا بناء WoW64 القديم (bin/wine ملف 32-بت).
+```
+
 ---
 
 ## التثبيت
 
 ```bash
 # داخل Termux
-bash s25-desktop/install.sh --with-windows
+bash s25-desktop/install.sh
 ```
 
 أو على نظام مثبّت مسبقاً:
@@ -46,14 +65,21 @@ s25-desktop shell
 sudo bash /opt/s25/src/install-windows-layer.sh
 ```
 
-يُنزّل: box64 + مكتبات x86_64 + بناء Wine + DXVK ≈ **1.5 غيغابايت**، ويأخذ
-20–40 دقيقة حسب الشبكة.
+يُنزّل: box64 + مكتبات x86_64 + بناء Wine + DXVK ≈ **1.5 غيغابايت**.
+
+الأوقات الواقعية (قِست على معالج حاسوب، فالجوال أبطأ):
+
+| المرحلة | الوقت |
+|---------|-------|
+| التنزيلات | 10–30 دقيقة حسب الشبكة |
+| `wineboot` (إنشاء بيئة ويندوز) | **10–30 دقيقة** — استغرقت أكثر من 10 دقائق حتى على حاسوب. لا تقطعها |
+| تثبيت Claude أو Chrome (أول تشغيل) | 5–20 دقيقة |
 
 ### خيارات
 
 | الخيار | الوظيفة |
 |--------|---------|
-| `--wine-url <url>` | بناء Wine محدد (الافتراضي: أحدث بناء amd64 من Kron4ek) |
+| `--wine-url <url>` | بناء Wine محدد (الافتراضي: أحدث `amd64-wow64` من Kron4ek) |
 | `--dxvk-url <url>` | إصدار DXVK محدد |
 | `--no-dxvk` | بدون DXVK (WineD3D فوق OpenGL/Zink — أبطأ لكن أوسع توافقاً) |
 | `--prefix-only` | إعادة إنشاء بيئة ويندوز فقط (إصلاح بيئة تالفة) |
@@ -117,9 +143,9 @@ sudo bash /opt/s25/src/install-windows-layer.sh --no-dxvk
 # 2. بدون تسريع GPU إطلاقاً
 S25_GPU=off chrome-pc-win
 
-# 3. بناء Wine مختلف (staging غالباً أفضل توافقاً)
+# 3. بناء Wine مختلف — يجب أن يبقى amd64-wow64
 sudo bash /opt/s25/src/install-windows-layer.sh \
-  --wine-url https://github.com/Kron4ek/Wine-Builds/releases/download/9.0/wine-9.0-staging-amd64.tar.xz
+  --wine-url https://github.com/Kron4ek/Wine-Builds/releases/download/10.0/wine-10.0-amd64-wow64.tar.xz
 
 # 4. بيئة ويندوز جديدة نظيفة
 sudo bash /opt/s25/src/install-windows-layer.sh --prefix-only
