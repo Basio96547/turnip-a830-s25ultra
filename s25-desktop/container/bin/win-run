@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# ═══════════════════════════════════════════════════════════════════════
+#  win-run — تشغيل أي برنامج ويندوز (.exe / .msi) على الجوال
+#            عبر Wine + box64 + DXVK فوق Turnip/Vulkan
+#
+#  أمثلة:
+#     win-run winecfg
+#     win-run /mnt/sdcard/Download/setup.exe
+#     win-run installer.msi              (يُشغّل تلقائياً عبر msiexec)
+#     win-run "C:\\Program Files\\App\\app.exe" --flag
+# ═══════════════════════════════════════════════════════════════════════
+
+# shellcheck source=../etc/env.sh
+. /opt/s25/etc/env.sh
+
+if [ ! -r /opt/s25/etc/windows.sh ]; then
+    printf '✗ طبقة ويندوز غير مثبتة.\n  شغّل: sudo bash /opt/s25/src/install-windows-layer.sh\n' >&2
+    exit 1
+fi
+# shellcheck source=/dev/null
+. /opt/s25/etc/windows.sh
+
+[ $# -ge 1 ] || { printf '✗ الاستخدام: win-run <ملف.exe|أمر> [وسائط]\n' >&2; exit 1; }
+
+if [ ! -x "${S25_WINE:-}" ]; then
+    printf '✗ لم يتم العثور على Wine في %s\n  أعد التثبيت: sudo bash /opt/s25/src/install-windows-layer.sh\n' \
+        "${S25_WINE:-/opt/s25/windows/wine}" >&2
+    exit 1
+fi
+
+command -v box64 >/dev/null 2>&1 || { printf '✗ box64 غير مثبت\n' >&2; exit 1; }
+
+TARGET="$1"; shift
+
+# ملفات MSI تحتاج msiexec
+case "$TARGET" in
+    *.msi|*.MSI) exec box64 "$S25_WINE" msiexec /i "$TARGET" "$@" ;;
+esac
+
+exec box64 "$S25_WINE" "$TARGET" "$@"

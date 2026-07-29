@@ -39,6 +39,17 @@ case "$MODE" in
         export S25_APP_FULLSCREEN="${S25_APP_FULLSCREEN:-1}"
         exec dbus-launch --exit-with-session /opt/s25/bin/s25-app /opt/s25/bin/chrome-pc "$@"
         ;;
+    win-claude)
+        # Claude Desktop نسخة ويندوز (.exe) عبر Wine + box64
+        exec dbus-launch --exit-with-session /opt/s25/bin/s25-app /opt/s25/bin/claude-pc-win "$@"
+        ;;
+    win-chrome)
+        exec dbus-launch --exit-with-session /opt/s25/bin/s25-app /opt/s25/bin/chrome-pc-win "$@"
+        ;;
+    windows)
+        # سطح مكتب كامل + إعدادات Wine للتحقق من الطبقة
+        exec dbus-launch --exit-with-session /opt/s25/bin/s25-app /opt/s25/bin/win-run winecfg
+        ;;
     shell)
         exec bash -l
         ;;

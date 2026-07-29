@@ -22,7 +22,7 @@ XSOCK="$TMP/.X11-unix/X${XDISPLAY#:}"
 
 MODE="desktop"
 case "${1:-}" in
-    ""|desktop|claude|chrome|shell)
+    ""|desktop|claude|chrome|shell|win-claude|win-chrome|windows)
         MODE="${1:-desktop}"
         if [ $# -gt 0 ]; then shift; fi
         ;;

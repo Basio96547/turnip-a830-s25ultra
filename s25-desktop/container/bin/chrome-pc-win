@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# ═══════════════════════════════════════════════════════════════════════
+#  chrome-pc-win — تشغيل Google Chrome (نسخة ويندوز الرسمية) على الجوال
+#                  داخل طبقة ويندوز (Wine + box64 + DXVK فوق Turnip)
+#
+#  أول تشغيل: ينزّل حزمة Chrome Enterprise MSI الرسمية ويثبّتها في بيئة ويندوز.
+#
+#  ⚠️ Chrome على Wine يحتاج تعطيل حمايته (--no-sandbox) وأداؤه أبطأ بكثير من
+#  chrome-pc (كروم أصلي على معالج الجهاز). استخدم هذا فقط إن كنت تريد نسخة
+#  ويندوز بعينها.
+#
+#  متغيرات:
+#    S25_CHROME_MSI_URL=…    رابط أو مسار MSI بديل
+#    S25_WIN_REINSTALL=1     إعادة التثبيت
+#    S25_GPU=off             تعطيل تسريع الرسوميات
+# ═══════════════════════════════════════════════════════════════════════
+
+# shellcheck source=../etc/env.sh
+. /opt/s25/etc/env.sh
+if [ ! -r /opt/s25/etc/windows.sh ]; then
+    printf '✗ طبقة ويندوز غير مثبتة.\n  شغّل: sudo bash /opt/s25/src/install-windows-layer.sh\n' >&2
+    exit 1
+fi
+# shellcheck source=/dev/null
+. /opt/s25/etc/windows.sh
+
+MSI_URL="${S25_CHROME_MSI_URL:-https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi}"
+DL_DIR="/opt/s25/windows/downloads"
+CHROME_EXE="$WINEPREFIX/drive_c/Program Files/Google/Chrome/Application/chrome.exe"
+
+if [ ! -f "$CHROME_EXE" ] || [ "${S25_WIN_REINSTALL:-0}" = "1" ]; then
+    printf '▶ Chrome لويندوز غير مثبت — سيتم تنزيل حزمة MSI الرسمية\n'
+    mkdir -p "$DL_DIR"
+    case "$MSI_URL" in
+        /*|./*)
+            MSI="$MSI_URL"
+            [ -r "$MSI" ] || { printf '✗ الملف غير موجود: %s\n' "$MSI" >&2; exit 1; } ;;
+        *)
+            MSI="$DL_DIR/chrome-enterprise64.msi"
+            if [ ! -s "$MSI" ]; then
+                printf '  تنزيل من: %s\n' "$MSI_URL"
+                if ! curl -fL --retry 3 "$MSI_URL" -o "$MSI"; then
+                    rm -f "$MSI"
+                    cat >&2 <<'EOF'
+✗ فشل تنزيل حزمة Chrome لويندوز.
+  البديل: نزّلها يدوياً ثم:
+     S25_CHROME_MSI_URL=/mnt/sdcard/Download/chrome.msi chrome-pc-win
+  أو استخدم كروم الأصلي الأسرع:  chrome-pc
+EOF
+                    exit 1
+                fi
+            fi ;;
+    esac
+
+    printf '▶ تثبيت Chrome داخل بيئة ويندوز (دقائق على الجوال)…\n'
+    win-run "$MSI" /qn || printf '⚠ المُثبّت أبلغ عن خطأ — سنتحقق من النتيجة\n' >&2
+
+    if [ ! -f "$CHROME_EXE" ]; then
+        cat >&2 <<'EOF'
+✗ لم يُعثر على chrome.exe بعد التثبيت.
+  للتشخيص:  win-run winecfg
+  البديل الذي يعمل بأداء أعلى:  chrome-pc
+EOF
+        exit 1
+    fi
+    printf '✓ تم التثبيت\n'
+fi
+
+FLAGS=(
+    --no-sandbox                 # Wine + proot: لا يعمل sandbox كروم
+    --disable-dev-shm-usage
+    --no-first-run
+    --no-default-browser-check
+    --disable-features=RendererCodeIntegrity
+    --force-device-scale-factor="$S25_SCALE"
+)
+
+if [ "$S25_GPU_ACTIVE" = "turnip" ] && [ -f "$WINEPREFIX/.s25-dxvk" ]; then
+    # Direct3D 11 ← DXVK ← Vulkan ← Turnip
+    FLAGS+=(--use-angle=d3d11)
+else
+    FLAGS+=(--disable-gpu)
+fi
+
+if [ "${S25_APP_FULLSCREEN:-0}" = "1" ]; then
+    FLAGS+=(--start-fullscreen)
+fi
+
+if [ -n "${S25_CHROME_FLAGS:-}" ]; then
+    read -r -a EXTRA <<< "$S25_CHROME_FLAGS"
+    FLAGS+=("${EXTRA[@]}")
+fi
+
+exec win-run "$CHROME_EXE" "${FLAGS[@]}" "$@"

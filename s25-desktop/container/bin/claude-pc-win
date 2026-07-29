@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# ═══════════════════════════════════════════════════════════════════════
+#  claude-pc-win — تشغيل Claude Desktop (نسخة ويندوز الرسمية .exe)
+#                  داخل طبقة ويندوز على الجوال
+#
+#  أول تشغيل: ينزّل المُثبّت الرسمي من Anthropic ويثبّته في بيئة ويندوز.
+#  ما بعده  : يشغّل claude.exe مباشرة.
+#
+#  ⚠️ Claude Desktop تطبيق Electron، وهو من أصعب ما يُشغَّل على Wine. إن لم
+#  يعمل أو كان بطيئاً جداً فاستخدم النسخة الأصلية للينكس: claude-pc
+#
+#  متغيرات:
+#    S25_CLAUDE_SETUP_URL=…   رابط مُثبّت بديل (أو مسار ملف محلي)
+#    S25_WIN_REINSTALL=1      إعادة التثبيت من جديد
+# ═══════════════════════════════════════════════════════════════════════
+
+# shellcheck source=../etc/env.sh
+. /opt/s25/etc/env.sh
+if [ ! -r /opt/s25/etc/windows.sh ]; then
+    printf '✗ طبقة ويندوز غير مثبتة.\n  شغّل: sudo bash /opt/s25/src/install-windows-layer.sh\n' >&2
+    exit 1
+fi
+# shellcheck source=/dev/null
+. /opt/s25/etc/windows.sh
+
+SETUP_URL="${S25_CLAUDE_SETUP_URL:-https://storage.googleapis.com/osprey-downloads-c02f6a0d-347c-492b-a752-3e0651722e97/nest-win-x64/Claude-Setup-x64.exe}"
+DL_DIR="/opt/s25/windows/downloads"
+
+find_claude_exe() {
+    # Squirrel يثبّت في AppData\Local\AnthropicClaude — نأخذ أحدث نسخة
+    find "$WINEPREFIX/drive_c/users" -maxdepth 6 -type f \
+        \( -iname 'claude.exe' \) 2>/dev/null | sort | tail -1
+}
+
+CLAUDE_EXE="$(find_claude_exe || true)"
+
+if [ -n "$CLAUDE_EXE" ] && [ "${S25_WIN_REINSTALL:-0}" != "1" ]; then
+    printf '▶ تشغيل: %s\n' "$CLAUDE_EXE"
+    exec win-run "$CLAUDE_EXE" "$@"
+fi
+
+printf '▶ Claude Desktop لويندوز غير مثبت — سيتم تنزيل المُثبّت الرسمي\n'
+mkdir -p "$DL_DIR"
+
+case "$SETUP_URL" in
+    /*|./*)
+        SETUP="$SETUP_URL"
+        [ -r "$SETUP" ] || { printf '✗ الملف غير موجود: %s\n' "$SETUP" >&2; exit 1; } ;;
+    *)
+        SETUP="$DL_DIR/Claude-Setup-x64.exe"
+        if [ ! -s "$SETUP" ]; then
+            printf '  تنزيل من: %s\n' "$SETUP_URL"
+            if ! curl -fL --retry 3 "$SETUP_URL" -o "$SETUP"; then
+                rm -f "$SETUP"
+                cat >&2 <<'EOF'
+✗ فشل تنزيل مُثبّت Claude لويندوز.
+  الحلول:
+   • نزّل Claude-Setup-x64.exe يدوياً من claude.ai/download على الجوال، ثم:
+       S25_CLAUDE_SETUP_URL=/mnt/sdcard/Download/Claude-Setup-x64.exe claude-pc-win
+   • أو استخدم نسخة لينكس الأسرع:  claude-pc
+EOF
+                exit 1
+            fi
+        fi ;;
+esac
+
+printf '▶ تشغيل المُثبّت داخل بيئة ويندوز (قد يأخذ دقائق على الجوال)…\n'
+win-run "$SETUP" || printf '⚠ المُثبّت انتهى بحالة خطأ — سنتحقق إن كان التثبيت نجح\n' >&2
+
+# المُثبّت يعمل في الخلفية عبر Squirrel — ننتظر ظهور الملف
+for _ in $(seq 1 30); do
+    CLAUDE_EXE="$(find_claude_exe || true)"
+    [ -n "$CLAUDE_EXE" ] && break
+    sleep 2
+done
+
+if [ -z "$CLAUDE_EXE" ]; then
+    cat >&2 <<'EOF'
+✗ لم يُعثر على claude.exe بعد التثبيت.
+  للتشخيص:  win-run winecfg    (هل تعمل طبقة ويندوز أصلاً؟)
+             ls "$WINEPREFIX/drive_c/users"
+  البديل الذي يعمل بأداء أعلى:  claude-pc
+EOF
+    exit 1
+fi
+
+printf '✓ تم التثبيت: %s\n' "$CLAUDE_EXE"
+exec win-run "$CLAUDE_EXE" "$@"

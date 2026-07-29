@@ -101,7 +101,7 @@ bash s25-desktop/install.sh --skip-mesa      # رسوميات على المعا�
 | `--jobs <N>` | عدد مهام الترجمة (قلّلها إن نفدت الذاكرة) |
 | `--claude-mode auto\|community\|wrapper` | طريقة تثبيت Claude PC |
 | `--skip-mesa` / `--skip-chromium` / `--skip-claude` | تخطي مرحلة |
-| `--with-chrome-x86` | إضافة Chrome الرسمي amd64 عبر box64 (تجريبي) |
+| `--with-windows` | إضافة طبقة ويندوز (Wine + box64 + DXVK) لتشغيل ملفات .exe |
 | `-y` | بدون أسئلة تأكيد |
 
 ---
@@ -127,6 +127,9 @@ s25-desktop            # سطح مكتب XFCE كامل
 s25-desktop claude     # Claude PC وحده بملء الشاشة
 s25-desktop chrome     # كروم سطح المكتب وحده
 s25-desktop shell      # طرفية داخل الحاوية (بدون واجهة)
+s25-desktop win-claude # Claude Desktop نسخة ويندوز (.exe)
+s25-desktop win-chrome # Chrome نسخة ويندوز (.exe)
+s25-desktop windows    # winecfg — للتأكد أن طبقة ويندوز تعمل
 s25-stop               # إيقاف كل شيء وتحرير الذاكرة والبطارية
 ```
 
@@ -142,7 +145,9 @@ s25-stop               # إيقاف كل شيء وتحرير الذاكرة وا
 | `chrome-pc` | كروم سطح المكتب |
 | `claude` | Claude Code CLI في الطرفية |
 | `s25-doctor` | تشخيص شامل (GPU، عرض، صوت، تطبيقات) |
-| `chrome-x86` | Chrome الرسمي amd64 عبر box64 (إن ثُبّت) |
+| `claude-pc-win` | Claude Desktop نسخة ويندوز (.exe) — يحتاج `--with-windows` |
+| `chrome-pc-win` | Chrome نسخة ويندوز (.exe) |
+| `win-run <ملف.exe>` | تشغيل أي برنامج ويندوز |
 
 ---
 
@@ -182,8 +187,9 @@ Google تصدر Chrome لـ Linux على **amd64 فقط** — لا نسخة arm6
 الجهاز، أي أسرع بمراحل من أي محاكاة. الملفات، الإضافات، أدوات المطور، عدة
 نوافذ، تبويبات — كلها كما في الكمبيوتر.
 
-من يريد Chrome الرسمي بالاسم والشعار: `--with-chrome-x86` يشغّله عبر box64
-(ترجمة x86_64 لحظية). يعمل، لكنه بطيء وبدون تسريع GPU — للتجربة فقط.
+من يريد **نسخة ويندوز بعينها** (`chrome.exe` الرسمي): ثبّت طبقة ويندوز
+بـ `--with-windows` ثم `chrome-pc-win`. تعمل عبر Wine + box64 + DXVK، لكن أبطأ
+بكثير — التفاصيل والتوقعات الواقعية في [WINDOWS.md](WINDOWS.md).
 
 ---
 
@@ -264,12 +270,15 @@ s25-desktop/
 │   ├── build-mesa-turnip.sh        # Mesa glibc: Turnip/KGSL + Zink
 │   ├── install-chromium.sh         # كروم سطح المكتب
 │   ├── install-claude-desktop.sh   # Claude PC + Claude Code CLI
-│   ├── install-chrome-x86.sh       # Chrome amd64 عبر box64 (تجريبي)
+│   ├── install-windows-layer.sh    # طبقة ويندوز: Wine + box64 + DXVK
+│   ├── lib-multiarch.sh            # box64 + مكتبات x86_64 داخل حاوية arm64
 │   ├── claude-pc-app/              # تطبيق Electron (main.js, preload.js)
-│   ├── bin/                        # s25-session, s25-app, chrome-pc, claude-pc, s25-doctor
+│   ├── bin/                        # s25-session, s25-app, chrome-pc, claude-pc,
+│   │                               #   win-run, claude-pc-win, chrome-pc-win, s25-doctor
 │   └── etc/env.sh                  # بيئة الرسوميات والصوت والعرض
 └── docs/
     ├── README.md                   # هذا الملف
+    ├── WINDOWS.md                  # تشغيل ملفات .exe (Wine + box64 + DXVK)
     └── TROUBLESHOOTING.md          # حل المشاكل
 ```
 

@@ -42,9 +42,26 @@
             android:lineSpacingExtra="4dp" />
 
         <Button
-            android:id="@+id/btn_claude"
+            android:id="@+id/btn_win_claude"
             style="@style/ActionButton"
             android:layout_marginTop="18dp"
+            android:text="@string/btn_win_claude" />
+
+        <Button
+            android:id="@+id/btn_win_chrome"
+            style="@style/ActionButton"
+            android:text="@string/btn_win_chrome" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="6dp"
+            android:background="@color/card" />
+
+        <Button
+            android:id="@+id/btn_claude"
+            style="@style/ActionButton"
             android:text="@string/btn_claude" />
 
         <Button

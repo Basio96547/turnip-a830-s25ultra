@@ -95,6 +95,52 @@ else
     skip "غلاف Claude PC" "غير مثبت"
 fi
 
+head2 "طبقة ويندوز (Wine + box64 + DXVK)"
+if [ -r /opt/s25/etc/windows.sh ]; then
+    # shellcheck source=/dev/null
+    . /opt/s25/etc/windows.sh
+    pass "الإعدادات" "/opt/s25/etc/windows.sh"
+
+    if command -v box64 >/dev/null 2>&1; then
+        pass "box64" "$(box64 --version 2>&1 | head -1)"
+    else
+        fail "box64" "غير مثبت — لا يمكن تشغيل برامج x86_64"
+    fi
+
+    if [ -x "${S25_WINE:-/nonexistent}" ]; then
+        pass "Wine" "$S25_WINE"
+    else
+        fail "Wine" "غير موجود — أعد تشغيل install-windows-layer.sh"
+    fi
+
+    if [ -d "${WINEPREFIX:-/nonexistent}/drive_c" ]; then
+        pass "بيئة ويندوز" "$WINEPREFIX"
+    else
+        fail "بيئة ويندوز" "غير مُنشأة — شغّل install-windows-layer.sh --prefix-only"
+    fi
+
+    if [ -f "${WINEPREFIX:-/nonexistent}/.s25-dxvk" ]; then
+        pass "DXVK" "مثبت (Direct3D ← Vulkan)"
+    else
+        skip "DXVK" "غير مثبت — سيُستخدم WineD3D فوق OpenGL"
+    fi
+
+    WIN_CLAUDE="$(find "${WINEPREFIX:-/nonexistent}/drive_c/users" -maxdepth 6 -iname 'claude.exe' 2>/dev/null | sort | tail -1)"
+    if [ -n "$WIN_CLAUDE" ]; then
+        pass "Claude لويندوز" "مثبت"
+    else
+        skip "Claude لويندوز" "غير مثبت — شغّل claude-pc-win"
+    fi
+
+    if [ -f "${WINEPREFIX:-/nonexistent}/drive_c/Program Files/Google/Chrome/Application/chrome.exe" ]; then
+        pass "Chrome لويندوز" "مثبت"
+    else
+        skip "Chrome لويندوز" "غير مثبت — شغّل chrome-pc-win"
+    fi
+else
+    skip "طبقة ويندوز" "غير مثبتة (bash s25-desktop/install.sh --with-windows)"
+fi
+
 head2 "التخزين"
 df -h / /opt 2>/dev/null | sed 's/^/  /'
 

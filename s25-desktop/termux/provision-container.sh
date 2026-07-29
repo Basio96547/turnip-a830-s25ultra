@@ -18,7 +18,7 @@ CLAUDE_MODE="auto"
 SKIP_MESA=0
 SKIP_CHROMIUM=0
 SKIP_CLAUDE=0
-WITH_CHROME_X86=0
+WITH_WINDOWS=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -30,7 +30,7 @@ while [ $# -gt 0 ]; do
         --skip-mesa)       SKIP_MESA=1; shift ;;
         --skip-chromium)   SKIP_CHROMIUM=1; shift ;;
         --skip-claude)     SKIP_CLAUDE=1; shift ;;
-        --with-chrome-x86) WITH_CHROME_X86=1; shift ;;
+        --with-windows)    WITH_WINDOWS=1; shift ;;
         *) die "خيار غير معروف: $1" ;;
     esac
 done
@@ -128,10 +128,11 @@ else
         || warn "فشل تثبيت Claude PC"
 fi
 
-if [ "$WITH_CHROME_X86" = 1 ]; then
-    step "تثبيت Google Chrome الرسمي (amd64) عبر box64 — تجريبي"
-    plogin "S25_ASSUME_YES=1 bash /opt/s25/src/install-chrome-x86.sh" \
-        || warn "فشل تثبيت Chrome x86_64 — استخدم chrome-pc (Chromium) وهو أسرع بكثير"
+if [ "$WITH_WINDOWS" = 1 ]; then
+    step "تثبيت طبقة ويندوز (Wine + box64 + DXVK)"
+    warn "تنزيل ~1.5 غيغابايت وقد يأخذ وقتاً طويلاً"
+    plogin "S25_ASSUME_YES=1 bash /opt/s25/src/install-windows-layer.sh" \
+        || warn "فشل تثبيت طبقة ويندوز — راجع docs/WINDOWS.md"
 fi
 
 # ── 4. تثبيت أوامر التشغيل في Termux ───────────────────────────────────

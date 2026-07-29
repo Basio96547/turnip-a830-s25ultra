@@ -10,6 +10,8 @@
     <string name="not_installed">غير مثبت ✗</string>
     <string name="status_missing_hint">ثبّت التطبيقات الناقصة أولاً، ثم شغّل سكربت التثبيت داخل Termux:\nbash s25-desktop/install.sh</string>
 
+    <string name="btn_win_claude">✦  Claude Desktop (ويندوز .exe)</string>
+    <string name="btn_win_chrome">◉  Chrome (ويندوز .exe)</string>
     <string name="btn_desktop">▶  سطح المكتب الكامل</string>
     <string name="btn_claude">✦  Claude PC</string>
     <string name="btn_chrome">◉  كروم سطح المكتب</string>
@@ -21,6 +23,9 @@
     <string name="mode_desktop">سطح المكتب الكامل</string>
     <string name="mode_claude">Claude PC</string>
     <string name="mode_chrome">كروم سطح المكتب</string>
+    <string name="mode_win_claude">Claude Desktop لويندوز</string>
+    <string name="mode_win_chrome">Chrome لويندوز</string>
+    <string name="win_first_run">أول تشغيل ينزّل المُثبّت الرسمي داخل بيئة ويندوز — قد يأخذ دقائق.</string>
 
     <string name="starting">جارٍ تشغيل %1$s…\nسيتم الانتقال إلى شاشة العرض تلقائياً.\n\nإن بقيت الشاشة سوداء: افتح Termux ونفّذ\nbash s25-desktop/install.sh</string>
     <string name="stopped">تم إيقاف النظام وتحرير الذاكرة.</string>
@@ -39,6 +44,8 @@
     <string name="err_termux_background">تعذر تشغيل الأمر — افتح Termux مرة واحدة ثم أعد المحاولة.</string>
     <string name="err_generic">تعذر التشغيل: %1$s</string>
 
+    <string name="sc_win_claude">Claude (ويندوز)</string>
+    <string name="sc_win_chrome">Chrome (ويندوز)</string>
     <string name="sc_desktop">سطح المكتب</string>
     <string name="sc_claude">Claude PC</string>
     <string name="sc_chrome">كروم</string>

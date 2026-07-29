@@ -56,6 +56,12 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         status = findViewById(R.id.status);
 
+        bind(R.id.btn_win_claude, new Runnable() {
+            @Override public void run() { launchMode("win-claude"); }
+        });
+        bind(R.id.btn_win_chrome, new Runnable() {
+            @Override public void run() { launchMode("win-chrome"); }
+        });
         bind(R.id.btn_desktop, new Runnable() {
             @Override public void run() { launchMode("desktop"); }
         });
@@ -147,7 +153,11 @@ public class MainActivity extends Activity {
         boolean started = runInTermux(TERMUX_BIN + "s25-desktop", new String[]{mode}, false, false);
         if (!started) return;
 
-        status.setText(getString(R.string.starting, label(mode)));
+        String text = getString(R.string.starting, label(mode));
+        if (mode.startsWith("win-")) {
+            text = text + "\n\n" + getString(R.string.win_first_run);
+        }
+        status.setText(text);
 
         if (!isInstalled(TERMUX_X11_PKG)) {
             showInstallDialog(R.string.need_x11, X11_DOWNLOAD);
@@ -160,9 +170,13 @@ public class MainActivity extends Activity {
     }
 
     private String label(String mode) {
-        if ("claude".equals(mode)) return getString(R.string.mode_claude);
-        if ("chrome".equals(mode)) return getString(R.string.mode_chrome);
-        return getString(R.string.mode_desktop);
+        switch (mode) {
+            case "claude":     return getString(R.string.mode_claude);
+            case "chrome":     return getString(R.string.mode_chrome);
+            case "win-claude": return getString(R.string.mode_win_claude);
+            case "win-chrome": return getString(R.string.mode_win_chrome);
+            default:           return getString(R.string.mode_desktop);
+        }
     }
 
     private void runDoctor() {

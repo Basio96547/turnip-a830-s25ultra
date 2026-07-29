@@ -28,7 +28,7 @@ CLAUDE_MODE="auto"
 SKIP_MESA=0
 SKIP_CHROMIUM=0
 SKIP_CLAUDE=0
-WITH_CHROME_X86=0
+WITH_WINDOWS=0
 
 usage() {
     cat <<'EOF'
@@ -47,7 +47,8 @@ usage() {
   --skip-mesa             تخطي Mesa/Turnip (سيعمل كل شيء بالمعالج فقط — أبطأ)
   --skip-chromium         تخطي تثبيت Chromium
   --skip-claude           تخطي تثبيت Claude PC
-  --with-chrome-x86       إضافة Google Chrome الرسمي (amd64) عبر box64 — تجريبي
+  --with-windows          إضافة طبقة ويندوز (Wine + box64 + DXVK) لتشغيل
+                          ملفات .exe: Claude Desktop و Chrome لويندوز — تجريبي
   -y, --yes               عدم السؤال عن أي تأكيد
   -h, --help              هذه المساعدة
 
@@ -68,7 +69,7 @@ while [ $# -gt 0 ]; do
         --skip-mesa)     SKIP_MESA=1; shift ;;
         --skip-chromium) SKIP_CHROMIUM=1; shift ;;
         --skip-claude)   SKIP_CLAUDE=1; shift ;;
-        --with-chrome-x86) WITH_CHROME_X86=1; shift ;;
+        --with-windows)  WITH_WINDOWS=1; shift ;;
         -y|--yes)        export S25_ASSUME_YES=1; shift ;;
         -h|--help)       usage; exit 0 ;;
         *) err "خيار غير معروف: $1"; usage; exit 1 ;;
@@ -98,7 +99,7 @@ PROV_ARGS=(--distro "$DISTRO" --mesa-ref "$MESA_REF" --claude-mode "$CLAUDE_MODE
 [ "$SKIP_MESA" = 1 ]     && PROV_ARGS+=(--skip-mesa)
 [ "$SKIP_CHROMIUM" = 1 ] && PROV_ARGS+=(--skip-chromium)
 [ "$SKIP_CLAUDE" = 1 ]   && PROV_ARGS+=(--skip-claude)
-[ "$WITH_CHROME_X86" = 1 ] && PROV_ARGS+=(--with-chrome-x86)
+[ "$WITH_WINDOWS" = 1 ] && PROV_ARGS+=(--with-windows)
 
 bash "$HERE/termux/provision-container.sh" "${PROV_ARGS[@]}"
 

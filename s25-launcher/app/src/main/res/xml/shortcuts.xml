@@ -3,34 +3,36 @@
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
 
     <shortcut
-        android:shortcutId="claude"
+        android:shortcutId="win-claude"
         android:enabled="true"
         android:icon="@drawable/ic_shortcut"
-        android:shortcutShortLabel="@string/sc_claude">
+        android:shortcutShortLabel="@string/sc_win_claude">
         <intent
             android:action="android.intent.action.MAIN"
             android:targetClass="com.s25.desktop.launcher.MainActivity"
             android:targetPackage="com.s25.desktop.launcher">
             <extra
                 android:name="mode"
-                android:value="claude" />
+                android:value="win-claude" />
         </intent>
     </shortcut>
 
     <shortcut
-        android:shortcutId="chrome"
+        android:shortcutId="win-chrome"
         android:enabled="true"
         android:icon="@drawable/ic_shortcut"
-        android:shortcutShortLabel="@string/sc_chrome">
+        android:shortcutShortLabel="@string/sc_win_chrome">
         <intent
             android:action="android.intent.action.MAIN"
             android:targetClass="com.s25.desktop.launcher.MainActivity"
             android:targetPackage="com.s25.desktop.launcher">
             <extra
                 android:name="mode"
-                android:value="chrome" />
+                android:value="win-chrome" />
         </intent>
     </shortcut>
+
+
 
     <shortcut
         android:shortcutId="desktop"
