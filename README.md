@@ -43,7 +43,18 @@ s25-desktop claude     # Claude PC بملء الشاشة
 s25-desktop chrome     # كروم سطح المكتب
 ```
 
+### 📱 تطبيق يفتح النظام بضغطة واحدة
+
+مجلد [`s25-launcher/`](s25-launcher/) فيه تطبيق أندرويد (~26 كيلوبايت) يضع أيقونة على
+الشاشة الرئيسية تشغّل النظام وتنقلك إلى شاشة العرض تلقائياً — بدون كتابة أوامر:
+
+**الحزمة الجاهزة:** [`s25-launcher/prebuilt/S25-Desktop-launcher.apk`](s25-launcher/prebuilt/S25-Desktop-launcher.apk)
+
+الضغط الطويل على الأيقونة يعطي اختصارات مباشرة (Claude PC · كروم · سطح المكتب)
+يمكن سحبها كأيقونات مستقلة.
+
 📖 الدليل الكامل: [s25-desktop/docs/README.md](s25-desktop/docs/README.md) ·
+التطبيق: [s25-launcher/README.md](s25-launcher/README.md) ·
 حل المشاكل: [TROUBLESHOOTING.md](s25-desktop/docs/TROUBLESHOOTING.md)
 
 ## 🛠️ البناء من المصدر

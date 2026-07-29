@@ -2,3 +2,7 @@ turnip_workdir_a830/
 build.log
 ninja.log
 *.zip
+s25-launcher/build/
+s25-launcher/app/build/
+s25-launcher/.gradle/
+s25-launcher/local.properties

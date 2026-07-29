@@ -63,6 +63,23 @@ if [ ! -d "$HOME/storage" ] && have termux-setup-storage; then
     termux-setup-storage >/dev/null 2>&1 || warn "تعذر طلب صلاحية التخزين — يمكنك تشغيل termux-setup-storage لاحقاً"
 fi
 
+# ── السماح لتطبيق المُشغّل بتنفيذ الأوامر داخل Termux ───────────────────
+# مطلوب لتطبيق S25 Desktop (s25-launcher) الذي يشغّل النظام من أيقونة على
+# الشاشة الرئيسية عبر خدمة RUN_COMMAND.
+TERMUX_PROPS="$HOME/.termux/termux.properties"
+mkdir -p "$HOME/.termux"
+if grep -qE '^\s*allow-external-apps\s*=\s*true' "$TERMUX_PROPS" 2>/dev/null; then
+    ok "allow-external-apps مفعّل مسبقاً"
+else
+    # نزيل أي سطر معطّل/معلّق ثم نضيف السطر الصحيح
+    if [ -f "$TERMUX_PROPS" ]; then
+        sed -i '/allow-external-apps/d' "$TERMUX_PROPS"
+    fi
+    printf 'allow-external-apps=true\n' >> "$TERMUX_PROPS"
+    have termux-reload-settings && termux-reload-settings >/dev/null 2>&1 || true
+    ok "تم تفعيل allow-external-apps (لتطبيق المُشغّل)"
+fi
+
 # ── ملف إعدادات النظام ─────────────────────────────────────────────────
 mkdir -p "$PREFIX/etc"
 ok "جانب Termux جاهز"

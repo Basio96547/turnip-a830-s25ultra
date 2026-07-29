@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- اختصارات الضغط الطويل على أيقونة التطبيق -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="claude"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut"
+        android:shortcutShortLabel="@string/sc_claude">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetClass="com.s25.desktop.launcher.MainActivity"
+            android:targetPackage="com.s25.desktop.launcher">
+            <extra
+                android:name="mode"
+                android:value="claude" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="chrome"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut"
+        android:shortcutShortLabel="@string/sc_chrome">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetClass="com.s25.desktop.launcher.MainActivity"
+            android:targetPackage="com.s25.desktop.launcher">
+            <extra
+                android:name="mode"
+                android:value="chrome" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="desktop"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut"
+        android:shortcutShortLabel="@string/sc_desktop">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetClass="com.s25.desktop.launcher.MainActivity"
+            android:targetPackage="com.s25.desktop.launcher">
+            <extra
+                android:name="mode"
+                android:value="desktop" />
+        </intent>
+    </shortcut>
+</shortcuts>

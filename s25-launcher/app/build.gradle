@@ -1,0 +1,41 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.s25.desktop.launcher'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.s25.desktop.launcher'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+        resourceConfigurations += ['ar', 'en']
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled false
+            // بدون توقيع إصدار — نبني نسخة debug القابلة للتثبيت مباشرة
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+// لا توجد اعتماديات خارجية إطلاقاً — نستخدم واجهات أندرويد الأساسية فقط،
+// لتبقى الحزمة صغيرة (~60 كيلوبايت) والبناء بلا مفاجآت.
+dependencies { }

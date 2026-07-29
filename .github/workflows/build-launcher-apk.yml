@@ -1,0 +1,108 @@
+name: Build S25 Desktop launcher APK
+
+# يبني تطبيق التشغيل (APK) الذي يفتح النظام من الشاشة الرئيسية.
+# الناتج: artifact في صفحة Actions، وعند التشغيل اليدوي يمكن نشره كـ Release
+# ليصبح له رابط تحميل مباشر يعمل من الجوال.
+
+on:
+  push:
+    paths:
+      - 's25-launcher/**'
+      - '.github/workflows/build-launcher-apk.yml'
+  pull_request:
+    paths:
+      - 's25-launcher/**'
+  workflow_dispatch:
+    inputs:
+      make_release:
+        description: 'نشر الحزمة كـ Release (رابط تحميل مباشر)'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: استنساخ المستودع
+        uses: actions/checkout@v4
+
+      - name: تهيئة JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: تهيئة Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0'
+
+      - name: تهيئة Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: بناء APK
+        working-directory: s25-launcher
+        run: gradle --no-daemon assembleDebug
+
+      - name: معلومات الحزمة
+        id: apk
+        run: |
+          APK="s25-launcher/app/build/outputs/apk/debug/app-debug.apk"
+          [ -f "$APK" ] || { echo "❌ لم يتم إنتاج APK"; exit 1; }
+          OUT="S25-Desktop-launcher.apk"
+          cp "$APK" "$OUT"
+          ls -lh "$OUT"
+          AAPT="$ANDROID_HOME/build-tools/34.0.0/aapt2"
+          "$AAPT" dump badging "$OUT" | grep -E "^package:|uses-permission|launchable-activity" || true
+          echo "apk=$OUT" >> "$GITHUB_OUTPUT"
+          echo "version=$("$AAPT" dump badging "$OUT" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")" >> "$GITHUB_OUTPUT"
+
+      - name: رفع الحزمة كـ artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: S25-Desktop-launcher-apk
+          path: ${{ steps.apk.outputs.apk }}
+          retention-days: 60
+          compression-level: 0
+
+      - name: نشر Release (تشغيل يدوي فقط)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.make_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="launcher-v${{ steps.apk.outputs.version }}-r${{ github.run_number }}"
+          NOTES=$(mktemp)
+          {
+            echo "# تطبيق S25 Desktop — مُشغّل النظام"
+            echo ""
+            echo "تطبيق أندرويد صغير (~26 كيلوبايت) يضع أيقونة على الشاشة الرئيسية تفتح:"
+            echo "- Claude PC كتطبيق بملء الشاشة"
+            echo "- كروم سطح المكتب"
+            echo "- سطح مكتب XFCE الكامل"
+            echo ""
+            echo "## التثبيت"
+            echo "1. حمّل \`S25-Desktop-launcher.apk\` وثبّته (اسمح بتثبيت من مصادر غير معروفة)"
+            echo "2. ثبّت **Termux** (F-Droid) و **Termux:X11** إن لم تكن مثبتة"
+            echo "3. داخل Termux نفّذ مرة واحدة:"
+            echo '   ```'
+            echo '   git clone https://github.com/basio96547/turnip-a830-s25ultra'
+            echo '   bash turnip-a830-s25ultra/s25-desktop/install.sh'
+            echo '   ```'
+            echo "4. افتح التطبيق واضغط الزر الذي تريده"
+            echo ""
+            echo "> الحزمة موقّعة بمفتاح debug (كافٍ للتثبيت اليدوي، غير مناسب لمتجر Play)."
+          } > "$NOTES"
+
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "S25 Desktop Launcher ${{ steps.apk.outputs.version }} (build #${{ github.run_number }})" \
+            --notes-file "$NOTES" \
+            "${{ steps.apk.outputs.apk }}"

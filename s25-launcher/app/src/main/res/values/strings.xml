@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">S25 Desktop</string>
+    <string name="headline">نظام سطح المكتب على الجوال</string>
+    <string name="subhead">Claude PC · كروم الكمبيوتر · Adreno 830 / Turnip</string>
+
+    <string name="status_termux">Termux:</string>
+    <string name="status_x11">Termux:X11:</string>
+    <string name="installed">مثبت ✓</string>
+    <string name="not_installed">غير مثبت ✗</string>
+    <string name="status_missing_hint">ثبّت التطبيقات الناقصة أولاً، ثم شغّل سكربت التثبيت داخل Termux:\nbash s25-desktop/install.sh</string>
+
+    <string name="btn_desktop">▶  سطح المكتب الكامل</string>
+    <string name="btn_claude">✦  Claude PC</string>
+    <string name="btn_chrome">◉  كروم سطح المكتب</string>
+    <string name="btn_screen">⛶  فتح شاشة العرض</string>
+    <string name="btn_doctor">⚙  تشخيص النظام</string>
+    <string name="btn_termux">›_  فتح Termux</string>
+    <string name="btn_stop">■  إيقاف الكل</string>
+
+    <string name="mode_desktop">سطح المكتب الكامل</string>
+    <string name="mode_claude">Claude PC</string>
+    <string name="mode_chrome">كروم سطح المكتب</string>
+
+    <string name="starting">جارٍ تشغيل %1$s…\nسيتم الانتقال إلى شاشة العرض تلقائياً.\n\nإن بقيت الشاشة سوداء: افتح Termux ونفّذ\nbash s25-desktop/install.sh</string>
+    <string name="stopped">تم إيقاف النظام وتحرير الذاكرة.</string>
+
+    <string name="missing_app">تطبيق مطلوب</string>
+    <string name="need_termux">تطبيق Termux غير مثبت.\n\nحمّله من F-Droid أو GitHub (نسخة Play Store قديمة ولا تعمل)، ثم شغّل داخله:\n\ngit clone https://github.com/basio96547/turnip-a830-s25ultra\nbash turnip-a830-s25ultra/s25-desktop/install.sh</string>
+    <string name="need_x11">تطبيق Termux:X11 غير مثبت — وهو شاشة العرض.\n\nحمّل ملف app-arm64-v8a-debug.apk من صفحة الإصدارات وثبّته.</string>
+
+    <string name="permission_needed">صلاحية مطلوبة في Termux</string>
+    <string name="enable_external_apps">لكي يستطيع هذا التطبيق تشغيل الأوامر داخل Termux، نفّذ مرة واحدة داخل Termux:\n\n%1$s\n\nثم أعد المحاولة.</string>
+    <string name="copy_command">نسخ الأمر</string>
+    <string name="copied">تم النسخ</string>
+    <string name="download">تحميل</string>
+    <string name="close">إغلاق</string>
+
+    <string name="err_termux_background">تعذر تشغيل الأمر — افتح Termux مرة واحدة ثم أعد المحاولة.</string>
+    <string name="err_generic">تعذر التشغيل: %1$s</string>
+
+    <string name="sc_desktop">سطح المكتب</string>
+    <string name="sc_claude">Claude PC</string>
+    <string name="sc_chrome">كروم</string>
+</resources>

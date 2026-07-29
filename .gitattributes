@@ -9,3 +9,4 @@
 *.json text eol=lf
 *.svg text eol=lf
 s25-desktop/container/bin/* text eol=lf
+*.apk binary

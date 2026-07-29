@@ -1,0 +1,4 @@
+// مشروع تطبيق «S25 Desktop» — مُشغّل النظام من الشاشة الرئيسية
+plugins {
+    id 'com.android.application' version '8.5.2' apply false
+}

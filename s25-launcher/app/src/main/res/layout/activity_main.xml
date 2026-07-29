@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="28dp"
+        android:paddingBottom="28dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/headline"
+            android:textColor="@color/text"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/subhead"
+            android:textColor="@color/text_dim"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="@color/card"
+            android:padding="14dp"
+            android:textColor="@color/text_dim"
+            android:textSize="14sp"
+            android:lineSpacingExtra="4dp" />
+
+        <Button
+            android:id="@+id/btn_claude"
+            style="@style/ActionButton"
+            android:layout_marginTop="18dp"
+            android:text="@string/btn_claude" />
+
+        <Button
+            android:id="@+id/btn_chrome"
+            style="@style/ActionButton"
+            android:text="@string/btn_chrome" />
+
+        <Button
+            android:id="@+id/btn_desktop"
+            style="@style/ActionButton"
+            android:text="@string/btn_desktop" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="6dp"
+            android:background="@color/card" />
+
+        <Button
+            android:id="@+id/btn_screen"
+            style="@style/ActionButton"
+            android:text="@string/btn_screen" />
+
+        <Button
+            android:id="@+id/btn_doctor"
+            style="@style/ActionButton"
+            android:text="@string/btn_doctor" />
+
+        <Button
+            android:id="@+id/btn_termux"
+            style="@style/ActionButton"
+            android:text="@string/btn_termux" />
+
+        <Button
+            android:id="@+id/btn_stop"
+            style="@style/ActionButton"
+            android:text="@string/btn_stop" />
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,298 @@
+package com.s25.desktop.launcher;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.View;
+import android.widget.TextView;
+import android.widget.Toast;
+
+/**
+ * مُشغّل نظام S25 Desktop.
+ *
+ * التطبيق لا يحتوي محاكياً بنفسه — وظيفته أن يشغّل بضغطة واحدة سلسلة العمل
+ * الكاملة: تنفيذ الأمر {@code s25-desktop <mode>} داخل Termux عبر خدمة
+ * RUN_COMMAND، ثم الانتقال تلقائياً إلى شاشة العرض (تطبيق Termux:X11).
+ */
+public class MainActivity extends Activity {
+
+    private static final String TERMUX_PKG = "com.termux";
+    private static final String TERMUX_X11_PKG = "com.termux.x11";
+    private static final String RUN_COMMAND_SERVICE = "com.termux.app.RunCommandService";
+    private static final String ACTION_RUN_COMMAND = "com.termux.RUN_COMMAND";
+    private static final String EXTRA_PATH = "com.termux.RUN_COMMAND_PATH";
+    private static final String EXTRA_ARGS = "com.termux.RUN_COMMAND_ARGUMENTS";
+    private static final String EXTRA_WORKDIR = "com.termux.RUN_COMMAND_WORKDIR";
+    private static final String EXTRA_BACKGROUND = "com.termux.RUN_COMMAND_BACKGROUND";
+    private static final String EXTRA_SESSION_ACTION = "com.termux.RUN_COMMAND_SESSION_ACTION";
+
+    private static final String TERMUX_BIN = "/data/data/com.termux/files/usr/bin/";
+    private static final String TERMUX_HOME = "/data/data/com.termux/files/home";
+
+    /** مهلة قبل الانتقال لشاشة العرض — تكفي لبدء خادم X. */
+    private static final long SWITCH_DELAY_MS = 3500L;
+
+    private static final String ENABLE_CMD =
+            "echo 'allow-external-apps=true' >> ~/.termux/termux.properties && termux-reload-settings";
+
+    private static final String TERMUX_DOWNLOAD = "https://f-droid.org/packages/com.termux/";
+    private static final String X11_DOWNLOAD = "https://github.com/termux/termux-x11/releases";
+
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private TextView status;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        status = findViewById(R.id.status);
+
+        bind(R.id.btn_desktop, new Runnable() {
+            @Override public void run() { launchMode("desktop"); }
+        });
+        bind(R.id.btn_claude, new Runnable() {
+            @Override public void run() { launchMode("claude"); }
+        });
+        bind(R.id.btn_chrome, new Runnable() {
+            @Override public void run() { launchMode("chrome"); }
+        });
+        bind(R.id.btn_screen, new Runnable() {
+            @Override public void run() { openX11(true); }
+        });
+        bind(R.id.btn_doctor, new Runnable() {
+            @Override public void run() { runDoctor(); }
+        });
+        bind(R.id.btn_termux, new Runnable() {
+            @Override public void run() { openTermux(); }
+        });
+        bind(R.id.btn_stop, new Runnable() {
+            @Override public void run() { stopAll(); }
+        });
+
+        handleShortcut(getIntent());
+    }
+
+    private void bind(int id, final Runnable action) {
+        findViewById(id).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { action.run(); }
+        });
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleShortcut(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshStatus();
+    }
+
+    /** اختصارات الشاشة الرئيسية (الضغط الطويل على الأيقونة) تمرر الوضع هنا. */
+    private void handleShortcut(Intent intent) {
+        if (intent == null) return;
+        String mode = intent.getStringExtra("mode");
+        if (mode == null || mode.isEmpty()) return;
+        // نستهلك القيمة حتى لا تتكرر عند تدوير الشاشة أو العودة للتطبيق
+        intent.removeExtra("mode");
+        launchMode(mode);
+    }
+
+    // ── الحالة ─────────────────────────────────────────────────────────
+
+    private void refreshStatus() {
+        boolean termux = isInstalled(TERMUX_PKG);
+        boolean x11 = isInstalled(TERMUX_X11_PKG);
+        String text = getString(R.string.status_termux) + " " + mark(termux) + "\n"
+                + getString(R.string.status_x11) + " " + mark(x11);
+        if (!termux || !x11) {
+            text = text + "\n\n" + getString(R.string.status_missing_hint);
+        }
+        status.setText(text);
+    }
+
+    private String mark(boolean ok) {
+        return getString(ok ? R.string.installed : R.string.not_installed);
+    }
+
+    private boolean isInstalled(String pkg) {
+        try {
+            getPackageManager().getPackageInfo(pkg, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    // ── التشغيل ────────────────────────────────────────────────────────
+
+    private void launchMode(final String mode) {
+        if (!isInstalled(TERMUX_PKG)) {
+            showInstallDialog(R.string.need_termux, TERMUX_DOWNLOAD);
+            return;
+        }
+
+        boolean started = runInTermux(TERMUX_BIN + "s25-desktop", new String[]{mode}, false, false);
+        if (!started) return;
+
+        status.setText(getString(R.string.starting, label(mode)));
+
+        if (!isInstalled(TERMUX_X11_PKG)) {
+            showInstallDialog(R.string.need_x11, X11_DOWNLOAD);
+            return;
+        }
+        // ننتقل لشاشة العرض بعد أن يبدأ خادم X
+        handler.postDelayed(new Runnable() {
+            @Override public void run() { openX11(false); }
+        }, SWITCH_DELAY_MS);
+    }
+
+    private String label(String mode) {
+        if ("claude".equals(mode)) return getString(R.string.mode_claude);
+        if ("chrome".equals(mode)) return getString(R.string.mode_chrome);
+        return getString(R.string.mode_desktop);
+    }
+
+    private void runDoctor() {
+        if (!isInstalled(TERMUX_PKG)) {
+            showInstallDialog(R.string.need_termux, TERMUX_DOWNLOAD);
+            return;
+        }
+        // نفتح جلسة Termux مرئية حتى يقرأ المستخدم نتيجة التشخيص
+        runInTermux(TERMUX_BIN + "s25-doctor", new String[]{}, false, true);
+    }
+
+    private void stopAll() {
+        if (!isInstalled(TERMUX_PKG)) {
+            showInstallDialog(R.string.need_termux, TERMUX_DOWNLOAD);
+            return;
+        }
+        if (runInTermux(TERMUX_BIN + "s25-stop", new String[]{}, true, false)) {
+            status.setText(R.string.stopped);
+            toast(R.string.stopped);
+        }
+    }
+
+    /**
+     * تنفيذ أمر داخل Termux عبر خدمة RUN_COMMAND.
+     *
+     * @param background لا تُنشئ جلسة طرفية مرئية إطلاقاً
+     * @param showTermux افتح واجهة Termux لعرض مخرجات الأمر
+     * @return true إن قُبل الطلب
+     */
+    private boolean runInTermux(String path, String[] args, boolean background, boolean showTermux) {
+        Intent intent = new Intent(ACTION_RUN_COMMAND);
+        intent.setClassName(TERMUX_PKG, RUN_COMMAND_SERVICE);
+        intent.putExtra(EXTRA_PATH, path);
+        if (args.length > 0) {
+            intent.putExtra(EXTRA_ARGS, args);
+        }
+        intent.putExtra(EXTRA_WORKDIR, TERMUX_HOME);
+        intent.putExtra(EXTRA_BACKGROUND, background);
+        // "0" = اجعلها الجلسة الحالية وافتح Termux، "1" = اجعلها الحالية بدون فتح
+        intent.putExtra(EXTRA_SESSION_ACTION, showTermux ? "0" : "1");
+
+        try {
+            startService(intent);
+            return true;
+        } catch (SecurityException e) {
+            showEnableExternalAppsDialog();
+            return false;
+        } catch (IllegalStateException e) {
+            toast(R.string.err_termux_background);
+            return false;
+        } catch (RuntimeException e) {
+            status.setText(getString(R.string.err_generic, String.valueOf(e.getMessage())));
+            return false;
+        }
+    }
+
+    // ── شاشة العرض و Termux ────────────────────────────────────────────
+
+    private void openX11(boolean manual) {
+        Intent intent = new Intent();
+        intent.setClassName(TERMUX_X11_PKG, "com.termux.x11.MainActivity");
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+        try {
+            startActivity(intent);
+        } catch (RuntimeException e) {
+            if (manual) {
+                showInstallDialog(R.string.need_x11, X11_DOWNLOAD);
+            }
+        }
+    }
+
+    private void openTermux() {
+        if (!isInstalled(TERMUX_PKG)) {
+            showInstallDialog(R.string.need_termux, TERMUX_DOWNLOAD);
+            return;
+        }
+        Intent intent = getPackageManager().getLaunchIntentForPackage(TERMUX_PKG);
+        if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        }
+    }
+
+    // ── نوافذ الإرشاد ──────────────────────────────────────────────────
+
+    private void showInstallDialog(int messageRes, final String url) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.missing_app)
+                .setMessage(messageRes)
+                .setPositiveButton(R.string.download, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { openUrl(url); }
+                })
+                .setNegativeButton(R.string.close, null)
+                .show();
+    }
+
+    private void showEnableExternalAppsDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.permission_needed)
+                .setMessage(getString(R.string.enable_external_apps, ENABLE_CMD))
+                .setPositiveButton(R.string.copy_command, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        copyToClipboard(ENABLE_CMD);
+                        toast(R.string.copied);
+                        openTermux();
+                    }
+                })
+                .setNegativeButton(R.string.close, null)
+                .show();
+    }
+
+    private void copyToClipboard(String text) {
+        ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        if (cm != null) {
+            cm.setPrimaryClip(ClipData.newPlainText("s25", text));
+        }
+    }
+
+    private void openUrl(String url) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            startActivity(intent);
+        } catch (RuntimeException e) {
+            copyToClipboard(url);
+            toast(R.string.copied);
+        }
+    }
+
+    private void toast(int res) {
+        Toast.makeText(this, res, Toast.LENGTH_SHORT).show();
+    }
+}

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- شاشة كمبيوتر داخل هاتف: رمز «سطح مكتب على الجوال» -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- إطار الشاشة -->
+    <path
+        android:fillColor="#D97757"
+        android:pathData="M28,32 L80,32 A5,5 0 0 1 85,37 L85,69 A5,5 0 0 1 80,74 L28,74 A5,5 0 0 1 23,69 L23,37 A5,5 0 0 1 28,32 Z" />
+    <!-- داخل الشاشة -->
+    <path
+        android:fillColor="#12131A"
+        android:pathData="M29,38 L79,38 L79,68 L29,68 Z" />
+    <!-- نافذتان مفتوحتان (إشارة إلى تعدد التطبيقات) -->
+    <path
+        android:fillColor="#D97757"
+        android:pathData="M33,42 L54,42 L54,52 L33,52 Z" />
+    <path
+        android:fillColor="#8A8D9A"
+        android:pathData="M57,42 L75,42 L75,64 L57,64 Z" />
+    <path
+        android:fillColor="#8A8D9A"
+        android:pathData="M33,55 L54,55 L54,64 L33,64 Z" />
+    <!-- قاعدة الشاشة -->
+    <path
+        android:fillColor="#D97757"
+        android:pathData="M48,74 L60,74 L60,80 L70,80 L70,85 L38,85 L38,80 L48,80 Z" />
+</vector>

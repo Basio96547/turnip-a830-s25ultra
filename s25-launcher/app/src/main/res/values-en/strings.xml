@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="headline">Linux desktop on your phone</string>
+    <string name="subhead">Claude PC · desktop Chrome · Adreno 830 / Turnip</string>
+
+    <string name="installed">installed ✓</string>
+    <string name="not_installed">missing ✗</string>
+    <string name="status_missing_hint">Install the missing apps first, then run inside Termux:\nbash s25-desktop/install.sh</string>
+
+    <string name="btn_desktop">▶  Full desktop (XFCE)</string>
+    <string name="btn_claude">✦  Claude PC</string>
+    <string name="btn_chrome">◉  Desktop Chrome</string>
+    <string name="btn_screen">⛶  Open display</string>
+    <string name="btn_doctor">⚙  Diagnostics</string>
+    <string name="btn_termux">›_  Open Termux</string>
+    <string name="btn_stop">■  Stop everything</string>
+
+    <string name="mode_desktop">the full desktop</string>
+    <string name="mode_claude">Claude PC</string>
+    <string name="mode_chrome">desktop Chrome</string>
+
+    <string name="starting">Starting %1$s…\nSwitching to the display automatically.\n\nIf the screen stays black: open Termux and run\nbash s25-desktop/install.sh</string>
+    <string name="stopped">Stopped. Memory released.</string>
+
+    <string name="missing_app">App required</string>
+    <string name="need_termux">Termux is not installed.\n\nGet it from F-Droid or GitHub (the Play Store build is outdated), then run:\n\ngit clone https://github.com/basio96547/turnip-a830-s25ultra\nbash turnip-a830-s25ultra/s25-desktop/install.sh</string>
+    <string name="need_x11">Termux:X11 is not installed — it is the display app.\n\nInstall app-arm64-v8a-debug.apk from its releases page.</string>
+
+    <string name="permission_needed">Termux permission required</string>
+    <string name="enable_external_apps">To let this app run commands inside Termux, run once in Termux:\n\n%1$s\n\nThen try again.</string>
+    <string name="copy_command">Copy command</string>
+    <string name="copied">Copied</string>
+    <string name="download">Download</string>
+    <string name="close">Close</string>
+
+    <string name="err_termux_background">Could not start the command — open Termux once, then retry.</string>
+    <string name="err_generic">Failed to start: %1$s</string>
+
+    <string name="sc_desktop">Desktop</string>
+    <string name="sc_claude">Claude PC</string>
+    <string name="sc_chrome">Chrome</string>
+</resources>
