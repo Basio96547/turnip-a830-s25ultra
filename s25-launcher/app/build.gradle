@@ -15,9 +15,20 @@ android {
         resourceConfigurations += ['ar', 'en']
     }
 
+    signingConfigs {
+        // نفعّل مخططات التوقيع الثلاثة صراحةً: بعض أجهزة سامسونج/أندرويد ترفض
+        // الحزم الموقّعة بمخطط واحد فقط عند التثبيت اليدوي
+        debug {
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
+        }
+    }
+
     buildTypes {
         debug {
             minifyEnabled false
+            signingConfig signingConfigs.debug
         }
         release {
             minifyEnabled false
