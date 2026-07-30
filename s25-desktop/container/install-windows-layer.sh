@@ -34,6 +34,7 @@ else
     # shellcheck source=../lib/common.sh
     . "$SRC_DIR/../lib/common.sh"
 fi
+trap_errors
 # shellcheck source=lib-multiarch.sh
 . "$SRC_DIR/lib-multiarch.sh"
 

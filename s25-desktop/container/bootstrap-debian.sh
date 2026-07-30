@@ -14,6 +14,7 @@ else
     # shellcheck source=../lib/common.sh
     . "$SRC_DIR/../lib/common.sh"
 fi
+trap_errors
 
 need_root
 export DEBIAN_FRONTEND=noninteractive

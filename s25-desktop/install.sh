@@ -19,6 +19,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
 . "$HERE/lib/common.sh"
+trap_errors
 
 DISTRO="${S25_DISTRO:-debian}"
 JOBS=""

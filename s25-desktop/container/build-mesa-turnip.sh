@@ -32,6 +32,7 @@ else
     # shellcheck source=../lib/common.sh
     . "$SRC_DIR/../lib/common.sh"
 fi
+trap_errors
 
 PREFIX_DIR="/opt/s25/mesa"
 WORK="/opt/s25/build"

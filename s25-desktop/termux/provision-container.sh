@@ -9,6 +9,7 @@ S25_DIR="$(cd "$HERE/.." && pwd)"
 REPO_ROOT="$(cd "$S25_DIR/.." && pwd)"
 # shellcheck source=../lib/common.sh
 . "$S25_DIR/lib/common.sh"
+trap_errors
 
 DISTRO="debian"
 JOBS=""
