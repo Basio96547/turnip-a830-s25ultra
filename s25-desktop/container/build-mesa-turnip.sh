@@ -275,9 +275,8 @@ MESON_ARGS=(
     -Degl=enabled
     -Dgles1=disabled
     -Dgles2=enabled
-    -Dgbm=enabled
+    -Dgbm=disabled
     -Dglvnd=disabled
-    -Dshared-glapi=enabled
     -Dllvm=disabled
     -Dvideo-codecs=
     -Dtools=
@@ -285,10 +284,61 @@ MESON_ARGS=(
     -Dlibunwind=disabled
 )
 
-rm -rf "$BUILD_DIR"
-if ! meson setup "$BUILD_DIR" "${MESON_ARGS[@]}" 2>&1 | tail -20; then
-    die "فشل meson setup — راجع الرسائل أعلاه"
-fi
+# meson قد يرفض خياراً بحسب نسخة Mesa أو المنصة (مثل gbm الذي يحتاج DRM/KMS،
+# أو خيار أُهمل). بدل إسقاط البناء نعطّل الخيار المعني ونعيد المحاولة.
+meson_args_disable() {  # meson_args_disable <اسم الميزة>
+    local i val
+    for i in "${!MESON_ARGS[@]}"; do
+        case "${MESON_ARGS[$i]}" in
+            "-D$1="*)
+                val="${MESON_ARGS[$i]#*=}"
+                # الخيارات من نوع feature فقط تقبل disabled؛ غيرها (قوائم/combo) نحذفه
+                case "$val" in
+                    enabled|auto|disabled|true|false) MESON_ARGS[$i]="-D$1=disabled" ;;
+                    *) meson_args_drop "$1" ;;
+                esac
+                return 0 ;;
+        esac
+    done
+    MESON_ARGS+=("-D$1=disabled")
+}
+
+meson_args_drop() {     # meson_args_drop <اسم الخيار>
+    local i new=()
+    for i in "${!MESON_ARGS[@]}"; do
+        case "${MESON_ARGS[$i]}" in
+            "-D$1="*) ;;
+            *) new+=("${MESON_ARGS[$i]}") ;;
+        esac
+    done
+    MESON_ARGS=("${new[@]}")
+}
+
+MESON_LOG="$WORK/meson-setup.log"
+setup_ok=0
+for attempt in 1 2 3 4; do
+    rm -rf "$BUILD_DIR"
+    if meson setup "$BUILD_DIR" "${MESON_ARGS[@]}" >"$MESON_LOG" 2>&1; then
+        setup_ok=1
+        break
+    fi
+    grep -E 'ERROR|Unknown option' "$MESON_LOG" | head -4 | sed 's/^/    /'
+    feat="$(grep -oE 'Feature [a-z0-9_-]+ cannot be enabled' "$MESON_LOG" | head -1 | awk '{print $2}')"
+    unknown="$(grep -oE 'Unknown options?: *"?[a-z0-9_-]+' "$MESON_LOG" | head -1 | sed 's/.*: *"*//')"
+    if [ -n "$feat" ]; then
+        warn "meson يرفض تفعيل الميزة «$feat» على هذه المنصة — تعطيلها وإعادة المحاولة"
+        meson_args_disable "$feat"
+    elif [ -n "$unknown" ]; then
+        warn "الخيار «$unknown» غير معروف في هذه النسخة من Mesa — إزالته وإعادة المحاولة"
+        meson_args_drop "$unknown"
+    else
+        tail -25 "$MESON_LOG" | sed 's/^/    /'
+        die "فشل meson setup — السجل الكامل: $MESON_LOG"
+    fi
+done
+[ "$setup_ok" = 1 ] || die "فشل meson setup بعد عدة محاولات — السجل: $MESON_LOG"
+grep -E '^(Project version|C compiler)' "$MESON_LOG" | head -2 | sed 's/^/  /' || true
+ok "إعداد البناء جاهز"
 
 if ! ninja -C "$BUILD_DIR" -j "$JOBS" 2>&1 | tail -30; then
     err "فشل البناء. جرّب تقليل المهام: --jobs 2"
