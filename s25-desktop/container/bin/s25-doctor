@@ -49,13 +49,26 @@ fi
 pass "وضع الرسوميات" "$S25_GPU_ACTIVE (TU_DEBUG=${TU_DEBUG:-غير مضبوط})"
 
 if command -v vulkaninfo >/dev/null 2>&1; then
-    VK_OUT="$(timeout 60 vulkaninfo --summary 2>/dev/null || true)"
-    VK_DEV="$(printf '%s' "$VK_OUT" | grep -m1 'deviceName' | sed 's/.*= *//')"
+    # نحتفظ بـ stderr: بلا سببٍ معروض تبقى «لم يجد جهازاً» رسالة لا تُشخّص شيئاً
+    VK_OUT="$(timeout 60 vulkaninfo --summary 2>&1 || true)"
+    VK_DEV="$(printf '%s' "$VK_OUT" | sed -n '1,/deviceName/{s/.*deviceName *= *//p;}' | sed -n 1p)"
     if [ -n "$VK_DEV" ]; then
         pass "جهاز Vulkan" "$VK_DEV"
         printf '%s' "$VK_OUT" | grep -m1 'apiVersion' | sed 's/^/    /'
     else
-        fail "جهاز Vulkan" "vulkaninfo لم يجد جهازاً"
+        fail "جهاز Vulkan" "vulkaninfo لم يجد جهازاً — السبب المعروض:"
+        printf '%s' "$VK_OUT" | grep -viE '^$|^warning: .*layer' | sed -n '1,6p' | sed 's/^/      /'
+        # أشهر سبب: تعذّر تحميل libvulkan_freedreno.so لنقص مكتبة مشتركة
+        if [ -f /opt/s25/mesa/lib/libvulkan_freedreno.so ] && command -v ldd >/dev/null 2>&1; then
+            MISS="$(ldd /opt/s25/mesa/lib/libvulkan_freedreno.so 2>/dev/null | grep 'not found' || true)"
+            if [ -n "$MISS" ]; then
+                fail "مكتبات ناقصة للتعريف" "libvulkan_freedreno.so لا يمكن تحميله:"
+                printf '%s\n' "$MISS" | sed 's/^/      /'
+                printf '      %s\n' "الحل: s25-update build-mesa-turnip.sh --from-tarball <رابط الحزمة>"
+            else
+                pass "روابط التعريف" "كل مكتبات libvulkan_freedreno.so موجودة"
+            fi
+        fi
     fi
 else
     skip "vulkaninfo" "غير مثبت (sudo apt install vulkan-tools)"
