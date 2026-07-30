@@ -180,6 +180,8 @@ Winlator تطبيق أندرويد يجمع نفس المكوّنات (Wine + Bo
 | `err:module:import_dll` | مكتبة ويندوز ناقصة — غالباً يحتاج البرنامج مكوّنات إضافية (Visual C++ Runtime) |
 | بطء شديد جداً | متوقع لبرامج Chromium؛ فعّل `BOX64_DYNAREC_BIGBLOCK=2` وأعد المحاولة |
 | `Failed to create OpenGL context` | Turnip غير مُحمّل → `s25-doctor` وتأكد أن الوضع `turnip` لا `software` |
+| المُثبّت 32-بت لا يبدأ إطلاقاً | بناء Wine خطأ — `s25-doctor` سيقول «WoW64 قديم»؛ أعد التثبيت أو مرّر `--wine-url` لبناء `amd64-wow64` |
+| `s25-doctor` يقول «بيئة ويندوز ناقصة» | `wineboot` انقطع قبل أن يكمل → `--prefix-only` وانتظر حتى ينتهي |
 | نفاد الذاكرة | أغلق التطبيقات الأخرى؛ Wine + Chromium يستهلكان ذاكرة كبيرة |
 
 للتشخيص المفصّل شغّل مع سجلات Wine:

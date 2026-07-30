@@ -109,9 +109,22 @@ if [ -r /opt/s25/etc/windows.sh ]; then
     fi
 
     if [ -d "${WINEPREFIX:-/nonexistent}/drive_c" ]; then
-        pass "بيئة ويندوز" "$WINEPREFIX"
+        # بيئة كاملة تحتوي ~580 مكتبة في system32؛ الأقل يعني wineboot لم يكتمل
+        WIN_DLLS="$(find "$WINEPREFIX/drive_c/windows/system32" -maxdepth 1 -name '*.dll' 2>/dev/null | wc -l)"
+        if [ "$WIN_DLLS" -ge 400 ]; then
+            pass "بيئة ويندوز" "$WINEPREFIX ($WIN_DLLS مكتبة)"
+        else
+            fail "بيئة ويندوز" "ناقصة ($WIN_DLLS مكتبة فقط) — wineboot لم يكتمل:
+      sudo bash /opt/s25/src/install-windows-layer.sh --prefix-only"
+        fi
     else
         fail "بيئة ويندوز" "غير مُنشأة — شغّل install-windows-layer.sh --prefix-only"
+    fi
+
+    if file -L "${S25_WINE:-/nonexistent}" 2>/dev/null | grep -q 'ELF 32-bit'; then
+        fail "نوع بناء Wine" "WoW64 قديم — برامج 32-بت تحتاج box86 (راجع docs/WINDOWS.md)"
+    elif [ -x "${S25_WINE:-/nonexistent}" ]; then
+        pass "نوع بناء Wine" "WoW64 جديد ✓ (box64 يكفي لبرامج 32-بت)"
     fi
 
     if [ -f "${WINEPREFIX:-/nonexistent}/.s25-dxvk" ]; then
