@@ -110,7 +110,8 @@ s25-desktop win-claude # Claude Desktop لويندوز (.exe)
 s25-desktop win-chrome # Chrome لويندوز (.exe)
 s25-desktop windows    # winecfg — للتأكد أن طبقة ويندوز تعمل
 s25-desktop            # سطح مكتب XFCE كامل
-s25-desktop shell      # طرفية داخل الحاوية
+s25-desktop doctor     # تشخيص نصي في الطرفية
+s25-desktop shell      # طرفية داخل الحاوية — أو: s25-desktop shell <أمر>
 s25-stop               # إيقاف كل شيء وتحرير الذاكرة والبطارية
 ```
 

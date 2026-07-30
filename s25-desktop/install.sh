@@ -107,7 +107,7 @@ cat <<EOF
 
   ${C_G}أول تشغيل لبرنامج ويندوز${C_N} ينزّل مُثبّته الرسمي داخل بيئة ويندوز — كن صبوراً.
 
-  ${C_G}للتشخيص:${C_N}  s25-desktop shell  ثم  s25-doctor
+  ${C_G}للتشخيص:${C_N}  s25-desktop doctor
 
   الدليل: s25-desktop/docs/WINDOWS.md
 
