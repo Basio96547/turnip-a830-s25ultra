@@ -13,7 +13,7 @@
 زر **«① تثبيت النظام (مرة واحدة)»** يشغّل التثبيت الكامل داخل جلسة Termux مرئية:
 
 ```bash
-pkg install -y git && git clone https://github.com/basio96547/turnip-a830-s25ultra
+pkg install -y git && git clone -b claude/s25-ultra-emulator-system-fs4ozh https://github.com/basio96547/turnip-a830-s25ultra
 bash turnip-a830-s25ultra/s25-desktop/install.sh
 ```
 
@@ -56,7 +56,7 @@ Termux، وإيقاف الكل (`s25-stop`).
 
 ```bash
 sha256sum prebuilt/S25-Desktop-launcher.apk
-# f056b4c158a36fcede29e7a79a786c33394e36f888858f6c20f2a1f3e745fb3d
+# d1758ba1c08b472f18c7bf5496598bdb510c05da07e4930fe62854a3439e6568
 ```
 
 ### إن رفض الجهاز التثبيت (سامسونج تحديداً)
@@ -86,7 +86,7 @@ sha256sum prebuilt/S25-Desktop-launcher.apk
 ### 3. تثبيت النظام (مرة واحدة)
 
 ```bash
-git clone https://github.com/basio96547/turnip-a830-s25ultra
+git clone -b claude/s25-ultra-emulator-system-fs4ozh https://github.com/basio96547/turnip-a830-s25ultra
 bash turnip-a830-s25ultra/s25-desktop/install.sh
 ```
 

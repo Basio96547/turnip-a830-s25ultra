@@ -64,7 +64,7 @@ GitHub Actions (سير العمل `Build Mesa (Turnip KGSL + Zink) — proot gli
 
 ```bash
 pkg install git -y
-git clone https://github.com/basio96547/turnip-a830-s25ultra
+git clone -b claude/s25-ultra-emulator-system-fs4ozh https://github.com/basio96547/turnip-a830-s25ultra
 cd turnip-a830-s25ultra
 bash s25-desktop/install.sh \
   --mesa-tarball ~/storage/downloads/mesa-a830-glibc-arm64.tar.gz

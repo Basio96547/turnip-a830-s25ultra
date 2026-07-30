@@ -116,7 +116,7 @@ jobs:
             echo "2. ثبّت **Termux** (من F-Droid لا Play Store) و **Termux:X11** (APK)"
             echo "3. داخل Termux مرة واحدة — يثبّت الحاوية وTurnip وطبقة ويندوز:"
             echo '   ```'
-            echo '   git clone https://github.com/basio96547/turnip-a830-s25ultra'
+            echo '   git clone -b claude/s25-ultra-emulator-system-fs4ozh https://github.com/basio96547/turnip-a830-s25ultra'
             echo '   bash turnip-a830-s25ultra/s25-desktop/install.sh'
             echo '   ```'
             echo "4. افتح التطبيق واضغط الزر الذي تريده"

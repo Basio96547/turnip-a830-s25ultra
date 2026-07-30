@@ -47,10 +47,19 @@ public class MainActivity extends Activity {
 
     private static final String REPO_URL = "https://github.com/basio96547/turnip-a830-s25ultra";
 
-    /** أمر التثبيت الكامل: يستنسخ المستودع إن لزم ثم يشغّل المُثبّت. */
+    /** الفرع الذي يحتوي النظام (ليس main). */
+    private static final String REPO_BRANCH = "claude/s25-ultra-emulator-system-fs4ozh";
+
+    /**
+     * أمر التثبيت الكامل: يستنسخ الفرع الصحيح — أو يبدّل إليه إن كان المستودع
+     * مستنسخاً مسبقاً على main — ثم يشغّل المُثبّت.
+     */
     private static final String INSTALL_CMD =
             "cd \"$HOME\" && pkg install -y git && "
-            + "{ [ -d turnip-a830-s25ultra ] || git clone " + REPO_URL + "; } && "
+            + "{ [ -d turnip-a830-s25ultra/.git ] "
+            + "  || git clone -b " + REPO_BRANCH + " " + REPO_URL + "; } && "
+            + "git -C turnip-a830-s25ultra fetch origin " + REPO_BRANCH + " && "
+            + "git -C turnip-a830-s25ultra checkout " + REPO_BRANCH + " && "
             + "bash turnip-a830-s25ultra/s25-desktop/install.sh";
 
     private static final String PREFS = "s25";
