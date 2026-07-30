@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 # ═══════════════════════════════════════════════════════════════════════
 #  s25-app — تشغيل تطبيق واحد مع مدير نوافذ خفيف (بدون سطح مكتب كامل)
 #  الاستخدام: s25-app <أمر التطبيق> [وسائط]
+#
+#  إن فشل التطبيق تُعرض رسالة الخطأ على شاشة X — بدل أن يرى المستخدم
+#  شاشة سوداء بمؤشر ماوس ولا يعرف السبب.
 # ═══════════════════════════════════════════════════════════════════════
 
 # shellcheck source=../etc/env.sh
@@ -16,6 +19,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# مدير نوافذ خفيف حتى تكون للنوافذ حدود وأزرار
 if command -v openbox >/dev/null 2>&1; then
     openbox >/dev/null 2>&1 &
     WM_PID=$!
@@ -26,4 +30,47 @@ elif command -v xfwm4 >/dev/null 2>&1; then
     sleep 1
 fi
 
-"$@"
+# show_on_screen <عنوان> <نص> — يعرض الرسالة داخل جلسة X
+show_on_screen() {
+    local title="$1" body="$2"
+    if command -v zenity >/dev/null 2>&1; then
+        zenity --error --width=520 --title="$title" --text="$body" >/dev/null 2>&1 && return 0
+    fi
+    if command -v xmessage >/dev/null 2>&1; then
+        xmessage -center -title "$title" "$body" >/dev/null 2>&1 && return 0
+    fi
+    # آخر خيار: طرفية تبقى مفتوحة وتعرض الرسالة مع التشخيص
+    local script="printf '%s\n\n' \"$body\"; /opt/s25/bin/s25-doctor 2>&1 | tail -30; printf '\nاضغط Enter للإغلاق '; read _"
+    if command -v xfce4-terminal >/dev/null 2>&1; then
+        xfce4-terminal --title="$title" --hold -e "bash -lc \"$script\"" >/dev/null 2>&1 && return 0
+    fi
+    if command -v xterm >/dev/null 2>&1; then
+        xterm -title "$title" -hold -e bash -lc "$script" >/dev/null 2>&1 && return 0
+    fi
+    return 1
+}
+
+APP_NAME="$(basename "$1")"
+LOG="${TMPDIR:-/tmp}/s25-$APP_NAME.log"
+
+if "$@" 2>&1 | tee "$LOG"; then
+    exit 0
+fi
+
+# فشل التطبيق — نعرض السبب على الشاشة ونُبقي الجلسة قائمة ليقرأه المستخدم
+TAIL="$(tail -12 "$LOG" 2>/dev/null)"
+printf '✗ فشل %s — آخر الرسائل:\n%s\n' "$APP_NAME" "$TAIL" >&2
+show_on_screen "فشل تشغيل $APP_NAME" "تعذّر تشغيل $APP_NAME.
+
+$TAIL
+
+الأسباب الشائعة:
+• التثبيت لم يكتمل — نفّذ:  bash s25-desktop/install.sh
+• طبقة ويندوز غير مثبتة — نفّذ:  sudo bash /opt/s25/src/install-windows-layer.sh
+• للتشخيص الكامل:  s25-doctor
+
+السجل: $LOG" || {
+    printf '⚠ تعذر عرض الرسالة على الشاشة — اقرأ السجل: %s\n' "$LOG" >&2
+    sleep 20
+}
+exit 1

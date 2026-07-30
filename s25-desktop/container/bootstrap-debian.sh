@@ -34,7 +34,7 @@ apt_install xfce4 xfce4-terminal openbox dbus-x11 x11-xserver-utils xauth \
     xdg-utils desktop-file-utils procps psmisc file
 apt_install_soft thunar-archive-plugin xarchiver \
     xfce4-taskmanager xfce4-screenshooter mousepad \
-    x11-utils mesa-utils vulkan-tools pulseaudio-utils xclip \
+    x11-utils mesa-utils vulkan-tools pulseaudio-utils xclip zenity \
     gnome-themes-extra adwaita-icon-theme \
     fonts-noto-core fonts-noto-color-emoji fonts-liberation \
     fonts-kacst-one fonts-hosny-amiri fonts-sil-scheherazade \
