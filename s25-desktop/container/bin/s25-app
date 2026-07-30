@@ -17,6 +17,7 @@ WM_PID=""
 cleanup() {
     [ -n "$WM_PID" ] && kill "$WM_PID" 2>/dev/null || true
 }
+# ملاحظة: يُستبدل لاحقاً بـ cleanup_all بعد تعريف لوحة «جارٍ التشغيل»
 trap cleanup EXIT
 
 # مدير نوافذ خفيف حتى تكون للنوافذ حدود وأزرار
@@ -53,9 +54,45 @@ show_on_screen() {
 APP_NAME="$(basename "$1")"
 LOG="${TMPDIR:-/tmp}/s25-$APP_NAME.log"
 
+# لوحة «جارٍ التشغيل» تظهر فوراً: أول إقلاع لبرنامج ويندوز عبر box64 يأخذ
+# دقائق، وبلا هذه اللوحة تبدو الشاشة سوداء صامتة فيظن المستخدم أن شيئاً تعطّل.
+NOTICE_PID=""
+notice_start() {
+    local msg="جارٍ تشغيل $APP_NAME…
+
+أول إقلاع لبرنامج ويندوز عبر box64 قد يأخذ من دقيقة إلى عدة دقائق،
+وأول تشغيل لـ Claude/Chrome ينزّل المُثبّت الرسمي أيضاً.
+
+ستُغلق هذه اللوحة تلقائياً، وستظهر نافذة البرنامج عند جهوزها.
+السجل الحيّ: $LOG"
+    if command -v zenity >/dev/null 2>&1; then
+        zenity --info --width=520 --title="S25 · $APP_NAME" --text="$msg" >/dev/null 2>&1 &
+        NOTICE_PID=$!
+        return 0
+    fi
+    if command -v xmessage >/dev/null 2>&1; then
+        xmessage -center -timeout 0 -title "S25 · $APP_NAME" "$msg" >/dev/null 2>&1 &
+        NOTICE_PID=$!
+    fi
+}
+notice_stop() {
+    [ -n "$NOTICE_PID" ] && kill "$NOTICE_PID" 2>/dev/null || true
+    NOTICE_PID=""
+}
+
+cleanup_all() {
+    notice_stop
+    cleanup
+}
+trap cleanup_all EXIT
+
+notice_start
+
 if "$@" 2>&1 | tee "$LOG"; then
+    notice_stop
     exit 0
 fi
+notice_stop
 
 # فشل التطبيق — نعرض السبب على الشاشة ونُبقي الجلسة قائمة ليقرأه المستخدم
 TAIL="$(tail -12 "$LOG" 2>/dev/null)"
