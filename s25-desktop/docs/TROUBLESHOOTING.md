@@ -74,7 +74,8 @@ S25_GPU=off s25-desktop          # تشخيص: هل المشكلة من التع
 | `no space left on device` | يحتاج ~10 غيغابايت مؤقتاً — أفرغ مساحة، أو استخدم `--mesa-tarball` |
 | `libdrm >= 2.4.121 required` | السكربت يبنيه تلقائياً؛ إن فشل: `LIBDRM_TAG=libdrm-2.4.123 sudo bash /opt/s25/src/build-mesa-turnip.sh` |
 | `meson version` قديم | `pip3 install --break-system-packages -U meson` |
-| فشل باتش A8xx | جرّب إصداراً أقدم من Mesa: `--mesa-ref mesa-25.3` أو `--skip-patches` إن كان الدعم أصبح رسمياً |
+| `SyntaxError` في `freedreno_devices.py` | دعم A8xx صار مدموجاً في Mesa، وتطبيق الباتشات فوقه يفسد الملف. السكربت يتخطاها تلقائياً الآن؛ ولو حدث فهو يستعيد المصادر النظيفة. يدوياً: `--skip-patches` |
+| `Reversed (or previously applied) patch detected` | طبيعي ومتوقع — الباتش مدموج مسبقاً في Mesa |
 | انقطاع الشبكة | السكربت يعيد المحاولة؛ أعد تشغيل الأمر — المصادر تُستأنف |
 
 الأسرع دائماً: بناء الحزمة في GitHub Actions ثم:

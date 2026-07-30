@@ -189,8 +189,20 @@ ok "Mesa $MESA_VER ($MESA_HASH)"
 
 # ── 4. باتشات A830v2 ───────────────────────────────────────────────────
 step "4/6 باتشات Adreno 830v2 (KGSL + sysmem)"
+DEVICES_PY="src/freedreno/common/freedreno_devices.py"
+
+# دعم A8xx صار مدموجاً في Mesa upstream. تطبيق الباتشات الخارجية فوقه يفسد
+# الملفات (hunks معكوسة أو fuzz في المكان الخطأ) — لذلك نتخطاها عند اكتشاف
+# الدعم الرسمي. GMEM يبقى معطلاً عبر TU_DEBUG=sysmem في بيئة التشغيل.
+if [ "$SKIP_PATCHES" != 1 ] && grep -qE 'a8xx_gen1_a830|0x44050001' "$MESA_SRC/$DEVICES_PY" 2>/dev/null; then
+    ok "Mesa يدعم Adreno 830 رسمياً (وُجد في $DEVICES_PY)"
+    log "تخطي باتشات A8xx الخارجية — تطبيقها فوق الدعم الرسمي يُفسد المصادر"
+    log "GMEM يبقى معطلاً عبر TU_DEBUG=sysmem وقت التشغيل"
+    SKIP_PATCHES=1
+fi
+
 if [ "$SKIP_PATCHES" = 1 ]; then
-    warn "تم تخطي الباتشات بناءً على الطلب"
+    warn "البناء بدعم Mesa الرسمي بلا باتشات خارجية"
 else
     cd "$MESA_SRC"
     for spec in "tu8_kgsl_26.patch|$TU8_PATCH_URL" "tu_gen8.patch|$GEN8_PATCH_URL"; do
@@ -208,7 +220,6 @@ else
         fi
     done
 
-    DEVICES_PY="src/freedreno/common/freedreno_devices.py"
     if grep -q 'a8xx_gen1_a830' "$DEVICES_PY" 2>/dev/null || grep -q '0x44050001' "$DEVICES_PY" 2>/dev/null; then
         ok "دعم A830 موجود — تخطي adreno_830v2.patch"
     elif [ -n "$A830_PATCH" ]; then
@@ -229,9 +240,17 @@ else
         fi
     done
 
-    python3 -c "compile(open('$DEVICES_PY').read(),'d','exec')" || \
-        die "freedreno_devices.py غير صحيح نحوياً بعد الباتشات"
-    ok "المصادر جاهزة للبناء"
+    if ! python3 -c "compile(open('$DEVICES_PY').read(),'d','exec')" 2>/dev/null; then
+        warn "الباتشات أفسدت $DEVICES_PY — استرجاع المصادر النظيفة والبناء بدعم Mesa الرسمي"
+        git -C "$MESA_SRC" checkout -- . 2>/dev/null || true
+        git -C "$MESA_SRC" clean -fdq 2>/dev/null || true
+        python3 -c "compile(open('$DEVICES_PY').read(),'d','exec')" \
+            || die "المصادر لا تزال معطوبة — امسح مجلد البناء وأعد المحاولة:
+    sudo rm -rf $WORK/mesa"
+        ok "تم استرجاع المصادر النظيفة"
+    else
+        ok "المصادر جاهزة للبناء"
+    fi
 fi
 
 # ── 5. البناء ──────────────────────────────────────────────────────────
