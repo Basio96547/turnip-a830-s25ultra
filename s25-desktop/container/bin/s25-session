@@ -43,7 +43,15 @@ case "$MODE" in
         # سطح مكتب كامل + إعدادات Wine للتحقق من الطبقة
         exec dbus-launch --exit-with-session /opt/s25/bin/s25-app /opt/s25/bin/win-run winecfg
         ;;
+    doctor)
+        # تشخيص نصي بلا واجهة رسومية — الأسهل في النقل والقراءة
+        exec /opt/s25/bin/s25-doctor
+        ;;
     shell)
+        # مع وسائط: نفّذها ثم اخرج (s25-desktop shell s25-doctor)
+        # بلا وسائط: طرفية تفاعلية
+        while [ "${1:-}" = "--" ]; do shift; done
+        if [ $# -gt 0 ]; then exec bash -lc 'exec "$@"' _ "$@"; fi
         exec bash -l
         ;;
     *)

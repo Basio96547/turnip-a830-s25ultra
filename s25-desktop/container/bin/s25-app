@@ -34,11 +34,13 @@ fi
 # show_on_screen <عنوان> <نص> — يعرض الرسالة داخل جلسة X
 show_on_screen() {
     local title="$1" body="$2"
-    if command -v zenity >/dev/null 2>&1; then
-        zenity --error --width=520 --title="$title" --text="$body" >/dev/null 2>&1 && return 0
-    fi
+    # نفس الترتيب: xmessage بلا OpenGL أولاً، ثم zenity برسم برمجي
     if command -v xmessage >/dev/null 2>&1; then
         xmessage -center -title "$title" "$body" >/dev/null 2>&1 && return 0
+    fi
+    if command -v zenity >/dev/null 2>&1; then
+        GSK_RENDERER=cairo zenity --error --width=520 \
+            --title="$title" --text="$body" >/dev/null 2>&1 && return 0
     fi
     # آخر خيار: طرفية تبقى مفتوحة وتعرض الرسالة مع التشخيص
     local script="printf '%s\n\n' \"$body\"; /opt/s25/bin/s25-doctor 2>&1 | tail -30; printf '\nاضغط Enter للإغلاق '; read _"
@@ -65,13 +67,16 @@ notice_start() {
 
 ستُغلق هذه اللوحة تلقائياً، وستظهر نافذة البرنامج عند جهوزها.
 السجل الحيّ: $LOG"
-    if command -v zenity >/dev/null 2>&1; then
-        zenity --info --width=520 --title="S25 · $APP_NAME" --text="$msg" >/dev/null 2>&1 &
+    # xmessage أولاً: Xlib خالص بلا OpenGL. zenity على trixie هو GTK4 ويحتاج
+    # تسريعاً رسومياً عاملاً — فإن كان Vulkan/Zink معطلاً يموت بصمت ولا تُرى لوحة.
+    if command -v xmessage >/dev/null 2>&1; then
+        xmessage -center -title "S25 · $APP_NAME" "$msg" >/dev/null 2>&1 &
         NOTICE_PID=$!
         return 0
     fi
-    if command -v xmessage >/dev/null 2>&1; then
-        xmessage -center -timeout 0 -title "S25 · $APP_NAME" "$msg" >/dev/null 2>&1 &
+    if command -v zenity >/dev/null 2>&1; then
+        GSK_RENDERER=cairo zenity --info --width=520 \
+            --title="S25 · $APP_NAME" --text="$msg" >/dev/null 2>&1 &
         NOTICE_PID=$!
     fi
 }

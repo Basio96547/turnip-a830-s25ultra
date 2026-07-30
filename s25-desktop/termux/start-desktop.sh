@@ -22,7 +22,7 @@ XSOCK="$TMP/.X11-unix/X${XDISPLAY#:}"
 
 MODE="desktop"
 case "${1:-}" in
-    ""|desktop|shell|win-claude|win-chrome|windows)
+    ""|desktop|shell|doctor|win-claude|win-chrome|windows)
         MODE="${1:-desktop}"
         if [ $# -gt 0 ]; then shift; fi
         ;;
@@ -34,7 +34,8 @@ case "${1:-}" in
   win-chrome  Chrome لويندوز (.exe) بملء الشاشة
   windows     winecfg — للتأكد أن طبقة ويندوز تعمل
   desktop     سطح مكتب XFCE كامل (الافتراضي)
-  shell       طرفية داخل الحاوية بدون واجهة رسومية
+  doctor      تشخيص النظام نصياً في هذه الطرفية (بلا واجهة رسومية)
+  shell       طرفية داخل الحاوية — أو نفّذ أمراً: s25-desktop shell <أمر>
 
 متغيرات مفيدة (أو عدّل $PREFIX/etc/s25-desktop.conf):
   S25_GPU=off     تعطيل Turnip واستخدام رسوميات المعالج
@@ -113,7 +114,7 @@ x11_wait() { # x11_wait <ثوانٍ>
     return 1
 }
 
-if [ "$MODE" != "shell" ]; then
+if [ "$MODE" != "shell" ] && [ "$MODE" != "doctor" ]; then
     if [ -e "$XSOCK" ]; then
         log "خادم X يعمل مسبقاً على $XDISPLAY"
     else

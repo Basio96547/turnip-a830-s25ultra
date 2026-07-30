@@ -7,8 +7,8 @@
 #
 #  المتغيرات القابلة للضبط من الخارج:
 #    S25_GPU=auto|off     auto = استخدم Turnip إن توفر، off = رسوميات المعالج
-#    S25_DPI=140          كثافة نقاط سطح المكتب
-#    S25_SCALE=1.4        تكبير واجهة كروم / Claude PC
+#    S25_DPI=180          كثافة نقاط سطح المكتب
+#    S25_SCALE=2.0        تكبير واجهة كروم / Claude PC
 #    TU_DEBUG=sysmem      إلزامي على A830 (GMEM يسبب تعليق الـ GPU)
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -29,8 +29,8 @@ export GDK_BACKEND=x11
 export QT_QPA_PLATFORM=xcb
 export LANG="${LANG:-en_US.UTF-8}"
 
-export S25_DPI="${S25_DPI:-140}"
-export S25_SCALE="${S25_SCALE:-1.4}"
+export S25_DPI="${S25_DPI:-180}"
+export S25_SCALE="${S25_SCALE:-2.0}"
 export S25_GPU="${S25_GPU:-auto}"
 
 # ── اكتشاف تعريف Turnip المبني لـ glibc ────────────────────────────────

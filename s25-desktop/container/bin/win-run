@@ -31,6 +31,22 @@ fi
 
 command -v box64 >/dev/null 2>&1 || { printf '✗ box64 غير مثبت\n' >&2; exit 1; }
 
+# ── كثافة نقاط ويندوز ──────────────────────────────────────────────────
+# على شاشة 1440×3120 تظهر نوافذ ويندوز بحجم مجهري عند 96 نقطة/بوصة (المبدئي).
+# نضبط LogPixels مرة واحدة لكل قيمة، وعلامة تمنع تكرار العمل في كل تشغيل.
+S25_WIN_DPI="${S25_WIN_DPI:-240}"
+dpi_marker="${WINEPREFIX:-/nonexistent}/.s25-dpi-$S25_WIN_DPI"
+if [ -d "${WINEPREFIX:-/nonexistent}" ] && [ ! -f "$dpi_marker" ]; then
+    printf '▶ ضبط كثافة نقاط ويندوز على %s (للتغيير: S25_WIN_DPI=192 أو 144)\n' "$S25_WIN_DPI"
+    if box64 "$S25_WINE" reg add 'HKEY_CURRENT_USER\Control Panel\Desktop' \
+            /v LogPixels /t REG_DWORD /d "$S25_WIN_DPI" /f >/dev/null 2>&1; then
+        rm -f "${WINEPREFIX}"/.s25-dpi-* 2>/dev/null || true
+        : > "$dpi_marker"
+    else
+        printf '⚠ تعذر ضبط الكثافة — ستبقى النوافذ صغيرة (غير حرج)\n' >&2
+    fi
+fi
+
 TARGET="$1"; shift
 
 # ملفات MSI تحتاج msiexec
