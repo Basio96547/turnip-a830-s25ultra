@@ -46,16 +46,32 @@ for p in "${TERMUX_PKGS[@]}"; do
 done
 
 # ── التحقق من تطبيق Termux:X11 المرافق ─────────────────────────────────
-if have pm && pm list packages 2>/dev/null | grep -q 'com.termux.x11'; then
-    ok "تطبيق Termux:X11 مثبت على الجهاز"
-else
-    warn "تطبيق Termux:X11 غير مثبت (مطلوب لعرض سطح المكتب)"
-    cat <<'EOF'
+# ملاحظة: أندرويد 11+ يحجب رؤية الحزم عن التطبيقات، فـ pm قد لا يرى شيئاً حتى
+# لو كان التطبيق مثبتاً. لذلك نميّز بين «غير مثبت» و«لا يمكن التحقق».
+#   0 = مثبت · 1 = غير مثبت · 2 = تعذر التحقق
+x11_app_state() {
+    have pm || return 2
+    if pm path com.termux.x11 >/dev/null 2>&1; then return 0; fi
+    if pm list packages --user 0 com.termux.x11 2>/dev/null | grep -q 'com.termux.x11'; then return 0; fi
+    if pm list packages com.termux.x11 2>/dev/null | grep -q 'com.termux.x11'; then return 0; fi
+    # هل يرى pm أي حزمة إطلاقاً؟ إن لا، فالحجب هو السبب لا غياب التطبيق
+    if [ "$(pm list packages 2>/dev/null | wc -l)" -lt 2 ]; then return 2; fi
+    return 1
+}
+
+x11_app_state
+case $? in
+    0) ok "تطبيق Termux:X11 مثبت على الجهاز" ;;
+    2) log "تعذر التحقق من تطبيق Termux:X11 (أندرويد يحجب رؤية الحزم) — تأكد بنفسك أنه مثبت" ;;
+    *)
+        warn "تطبيق Termux:X11 غير مثبت (مطلوب لعرض واجهة البرامج)"
+        cat <<'EOF'
     حمّل ملف APK باسم app-arm64-v8a-debug.apk من:
       https://github.com/termux/termux-x11/releases
     ثبّته، افتحه مرة واحدة، ثم ارجع إلى Termux.
 EOF
-fi
+        ;;
+esac
 
 # ── وصول التخزين المشترك (للملفات والتنزيلات) ──────────────────────────
 if [ ! -d "$HOME/storage" ] && have termux-setup-storage; then
