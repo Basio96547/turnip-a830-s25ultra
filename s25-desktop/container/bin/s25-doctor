@@ -115,7 +115,7 @@ if [ -r /opt/s25/etc/windows.sh ]; then
             pass "بيئة ويندوز" "$WINEPREFIX ($WIN_DLLS مكتبة)"
         else
             fail "بيئة ويندوز" "ناقصة ($WIN_DLLS مكتبة فقط) — wineboot لم يكتمل:
-      sudo bash /opt/s25/src/install-windows-layer.sh --prefix-only"
+      s25-update install-windows-layer.sh --prefix-only"
         fi
     else
         fail "بيئة ويندوز" "غير مُنشأة — شغّل install-windows-layer.sh --prefix-only"
@@ -146,7 +146,7 @@ if [ -r /opt/s25/etc/windows.sh ]; then
         skip "Chrome لويندوز" "غير مثبت — شغّل chrome-pc-win"
     fi
 else
-    fail "طبقة ويندوز" "غير مثبتة — sudo bash /opt/s25/src/install-windows-layer.sh"
+    fail "طبقة ويندوز" "غير مثبتة — s25-update install-windows-layer.sh"
 fi
 
 head2 "التخزين"

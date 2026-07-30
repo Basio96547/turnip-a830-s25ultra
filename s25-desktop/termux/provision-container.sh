@@ -16,6 +16,7 @@ MESA_REF="main"
 MESA_TARBALL=""
 SKIP_MESA=0
 SKIP_WINDOWS=0
+PAYLOAD_ONLY=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -25,6 +26,7 @@ while [ $# -gt 0 ]; do
         --mesa-tarball)    MESA_TARBALL="${2:?}"; shift 2 ;;
         --skip-mesa)       SKIP_MESA=1; shift ;;
         --skip-windows)    SKIP_WINDOWS=1; shift ;;
+        --payload-only)    PAYLOAD_ONLY=1; shift ;;
         *) die "خيار غير معروف: $1" ;;
     esac
 done
@@ -157,6 +159,11 @@ if ! plogin "test -r /opt/s25/src/bootstrap-debian.sh" >/dev/null 2>&1; then
 fi
 ok "الحمولة مرئية داخل الحاوية"
 
+if [ "$PAYLOAD_ONLY" = 1 ]; then
+    ok "تم تحديث سكربتات النظام داخل الحاوية (/opt/s25/src)"
+    exit 0
+fi
+
 step "تهيئة النظام الأساسي وسطح مكتب XFCE"
 plogin "S25_ASSUME_YES=1 bash /opt/s25/src/bootstrap-debian.sh" \
     || die "فشلت تهيئة الحاوية (bootstrap-debian.sh)"
@@ -187,12 +194,14 @@ fi
 
 # ── 4. تثبيت أوامر التشغيل في Termux ───────────────────────────────────
 step "تثبيت أوامر التشغيل في Termux"
-install -Dm755 "$HERE/start-desktop.sh" "$PREFIX/bin/s25-desktop"
-install -Dm755 "$HERE/stop-desktop.sh"  "$PREFIX/bin/s25-stop"
+install -Dm755 "$HERE/start-desktop.sh"    "$PREFIX/bin/s25-desktop"
+install -Dm755 "$HERE/stop-desktop.sh"     "$PREFIX/bin/s25-stop"
+install -Dm755 "$HERE/update-container.sh" "$PREFIX/bin/s25-update"
 mkdir -p "$PREFIX/etc"
 cat > "$PREFIX/etc/s25-desktop.conf" <<EOF
 # إعدادات نظام S25 Desktop — عدّلها كما تشاء
 S25_DISTRO=$DISTRO
+S25_REPO=$REPO_ROOT
 S25_ROOTFS=$ROOTFS
 S25_BIND_SDCARD=$BIND_SDCARD
 # S25_GPU=auto        # auto | off  (off = رسوميات بالمعالج)
@@ -200,7 +209,7 @@ S25_BIND_SDCARD=$BIND_SDCARD
 # S25_SCALE=1.4       # تكبير واجهة البرامج
 # TU_DEBUG=sysmem     # مطلوب لـ A830 (GMEM يسبب تعليق الـ GPU)
 EOF
-ok "s25-desktop و s25-stop جاهزان"
+ok "s25-desktop · s25-stop · s25-update جاهزة"
 
 
 step "التشخيص النهائي"

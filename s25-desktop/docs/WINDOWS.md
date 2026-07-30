@@ -45,7 +45,7 @@ wine: could not load kernel32.dll, status c0000135
 تلقائياً. لتحديد بناء بنفسك:
 
 ```bash
-sudo bash /opt/s25/src/install-windows-layer.sh \
+s25-update install-windows-layer.sh \
   --wine-url https://github.com/Kron4ek/Wine-Builds/releases/download/10.0/wine-10.0-amd64-wow64.tar.xz
 ```
 
@@ -134,7 +134,7 @@ sudo apt-get update && sudo apt-get install --only-upgrade box64
 ```bash
 bash s25-desktop/install.sh --mesa-tarball <حزمة جاهزة>
 # ثم داخل الحاوية:
-sudo bash /opt/s25/src/install-windows-layer.sh --no-dxvk
+s25-update install-windows-layer.sh --no-dxvk
 ```
 
 ---
@@ -150,7 +150,7 @@ bash s25-desktop/install.sh
 
 ```bash
 s25-desktop shell
-sudo bash /opt/s25/src/install-windows-layer.sh
+s25-update install-windows-layer.sh
 ```
 
 يُنزّل: box64 + مكتبات x86_64 + بناء Wine + DXVK ≈ **1.5 غيغابايت**.
@@ -226,17 +226,17 @@ S25_CHROME_MSI_URL=/mnt/sdcard/Download/chrome.msi chrome-pc-win
 
 ```bash
 # 1. بدون DXVK
-sudo bash /opt/s25/src/install-windows-layer.sh --no-dxvk
+s25-update install-windows-layer.sh --no-dxvk
 
 # 2. بدون تسريع GPU إطلاقاً
 S25_GPU=off chrome-pc-win
 
 # 3. بناء Wine مختلف — يجب أن يبقى amd64-wow64
-sudo bash /opt/s25/src/install-windows-layer.sh \
+s25-update install-windows-layer.sh \
   --wine-url https://github.com/Kron4ek/Wine-Builds/releases/download/10.0/wine-10.0-amd64-wow64.tar.xz
 
 # 4. بيئة ويندوز جديدة نظيفة
-sudo bash /opt/s25/src/install-windows-layer.sh --prefix-only
+s25-update install-windows-layer.sh --prefix-only
 ```
 
 ---
@@ -262,10 +262,10 @@ Winlator تطبيق أندرويد يجمع نفس المكوّنات (Wine + Bo
 
 | ما تراه | السبب / الحل |
 |---------|--------------|
-| `box64 غير مثبت` | `sudo bash /opt/s25/src/install-windows-layer.sh` |
+| `box64 غير مثبت` | `s25-update install-windows-layer.sh` |
 | `E: Conflicting values set for option Signed-By` | أثر مصدر amd64 منفصل من نسخة قديمة من السكربت — النسخة الحالية تزيله تلقائياً؛ يدوياً: `sudo rm -f /etc/apt/sources.list.d/amd64.sources` |
 | `wine: cannot find L"C:\\windows\\system32\\..."` | بيئة ويندوز ناقصة → `--prefix-only` |
-| `wine: could not load kernel32.dll, status c0000135` | بيئة ويندوز فارغة أو ناقصة (wineboot لم يكتمل). النسخة الحالية تكتشف ذلك وتعيد بناءها تلقائياً؛ يدوياً:<br>`sudo bash /opt/s25/src/install-windows-layer.sh --prefix-only` |
+| `wine: could not load kernel32.dll, status c0000135` | بيئة ويندوز فارغة أو ناقصة (wineboot لم يكتمل). النسخة الحالية تكتشف ذلك وتعيد بناءها تلقائياً؛ يدوياً:<br>`s25-update install-windows-layer.sh --prefix-only` |
 | نافذة سوداء أو بلا رسم | `S25_GPU=off` للتشخيص، ثم جرّب `--no-dxvk` |
 | `err:module:import_dll` | مكتبة ويندوز ناقصة — غالباً يحتاج البرنامج مكوّنات إضافية (Visual C++ Runtime) |
 | بطء شديد جداً | متوقع لبرامج Chromium؛ فعّل `BOX64_DYNAREC_BIGBLOCK=2` وأعد المحاولة |

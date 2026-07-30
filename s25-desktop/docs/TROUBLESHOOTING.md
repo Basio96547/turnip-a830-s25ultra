@@ -36,7 +36,7 @@ xdpyinfo | head -5      # يجب أن يطبع أبعاد الشاشة
 2. **التعريف**: `ls -l /opt/s25/mesa/lib/libvulkan_freedreno.so` — إن لم يوجد فالبناء
    لم يكتمل:
    ```bash
-   sudo bash /opt/s25/src/build-mesa-turnip.sh --jobs 2
+   s25-update build-mesa-turnip.sh --jobs 2
    ```
 3. **ملف ICD**: `echo $VK_DRIVER_FILES` ثم `cat "$VK_DRIVER_FILES"` — تأكد أن
    `library_path` يشير إلى ملف موجود.
@@ -72,7 +72,7 @@ S25_GPU=off s25-desktop          # تشخيص: هل المشكلة من التع
 |---------|------|
 | `Killed` / نفاد الذاكرة | `--jobs 2` أو `--jobs 1`، وأغلق التطبيقات الأخرى |
 | `no space left on device` | يحتاج ~10 غيغابايت مؤقتاً — أفرغ مساحة، أو استخدم `--mesa-tarball` |
-| `libdrm >= 2.4.121 required` | السكربت يبنيه تلقائياً؛ إن فشل: `LIBDRM_TAG=libdrm-2.4.123 sudo bash /opt/s25/src/build-mesa-turnip.sh` |
+| `libdrm >= 2.4.121 required` | السكربت يبنيه تلقائياً؛ إن فشل: `LIBDRM_TAG=libdrm-2.4.123 s25-update build-mesa-turnip.sh` |
 | `meson version` قديم | `pip3 install --break-system-packages -U meson` |
 | `SyntaxError` في `freedreno_devices.py` | دعم A8xx صار مدموجاً في Mesa، وتطبيق الباتشات فوقه يفسد الملف. السكربت يتخطاها تلقائياً الآن؛ ولو حدث فهو يستعيد المصادر النظيفة. يدوياً: `--skip-patches` |
 | `Reversed (or previously applied) patch detected` | طبيعي ومتوقع — الباتش مدموج مسبقاً في Mesa |

@@ -98,6 +98,7 @@ cat <<EOF
     s25-desktop              # سطح مكتب XFCE كامل
     s25-desktop shell        # طرفية داخل الحاوية
     s25-stop                 # إيقاف كل شيء وتحرير الذاكرة
+    s25-update               # تحديث السكربتات داخل الحاوية بعد git pull
 
   ${C_G}قبل أول تشغيل:${C_N}
     • ثبّت تطبيق ${C_B}Termux:X11${C_N} (APK من github.com/termux/termux-x11/releases)

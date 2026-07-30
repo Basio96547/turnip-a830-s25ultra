@@ -66,7 +66,7 @@ $TAIL
 
 الأسباب الشائعة:
 • التثبيت لم يكتمل — نفّذ:  bash s25-desktop/install.sh
-• طبقة ويندوز غير مثبتة — نفّذ:  sudo bash /opt/s25/src/install-windows-layer.sh
+• طبقة ويندوز غير مثبتة — نفّذ:  s25-update install-windows-layer.sh
 • للتشخيص الكامل:  s25-doctor
 
 السجل: $LOG" || {

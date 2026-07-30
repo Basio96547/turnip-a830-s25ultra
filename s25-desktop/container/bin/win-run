@@ -15,7 +15,7 @@ set -euo pipefail
 . /opt/s25/etc/env.sh
 
 if [ ! -r /opt/s25/etc/windows.sh ]; then
-    printf '✗ طبقة ويندوز غير مثبتة.\n  شغّل: sudo bash /opt/s25/src/install-windows-layer.sh\n' >&2
+    printf '✗ طبقة ويندوز غير مثبتة.\n  شغّل: s25-update install-windows-layer.sh\n' >&2
     exit 1
 fi
 # shellcheck source=/dev/null
@@ -24,7 +24,7 @@ fi
 [ $# -ge 1 ] || { printf '✗ الاستخدام: win-run <ملف.exe|أمر> [وسائط]\n' >&2; exit 1; }
 
 if [ ! -x "${S25_WINE:-}" ]; then
-    printf '✗ لم يتم العثور على Wine في %s\n  أعد التثبيت: sudo bash /opt/s25/src/install-windows-layer.sh\n' \
+    printf '✗ لم يتم العثور على Wine في %s\n  أعد التثبيت: s25-update install-windows-layer.sh\n' \
         "${S25_WINE:-/opt/s25/windows/wine}" >&2
     exit 1
 fi

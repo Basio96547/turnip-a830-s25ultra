@@ -18,7 +18,7 @@ set -euo pipefail
 # shellcheck source=../etc/env.sh
 . /opt/s25/etc/env.sh
 if [ ! -r /opt/s25/etc/windows.sh ]; then
-    printf '✗ طبقة ويندوز غير مثبتة.\n  شغّل: sudo bash /opt/s25/src/install-windows-layer.sh\n' >&2
+    printf '✗ طبقة ويندوز غير مثبتة.\n  شغّل: s25-update install-windows-layer.sh\n' >&2
     exit 1
 fi
 # shellcheck source=/dev/null

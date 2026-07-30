@@ -19,7 +19,7 @@ set -euo pipefail
 #  إن تعذّر تشغيل أحدهما فراجع سلّم الحلول في docs/WINDOWS.md.
 #
 #  الاستخدام (داخل الحاوية كـ root):
-#     bash /opt/s25/src/install-windows-layer.sh [خيارات]
+#     s25-update install-windows-layer.sh [خيارات]
 #       --wine-url <url>     بناء Wine (افتراضي: أحدث amd64-wow64 — إلزامي لـ 32-بت)
 #       --dxvk-url <url>     تحديد إصدار DXVK
 #       --no-dxvk            بدون DXVK (استخدام WineD3D فوق OpenGL/Zink)
@@ -251,7 +251,7 @@ else
         warn "تعذّر إنشاء بيئة ويندوز بأي بناء ($DLLS مكتبة)"
         warn "الأسباب بالترتيب:"
         warn "  • box64 قديم مقابل Wine — حدّثه:  sudo apt-get install --only-upgrade box64"
-        warn "  • مكتبات x86_64 ناقصة — أعد:  sudo bash /opt/s25/src/install-windows-layer.sh"
+        warn "  • مكتبات x86_64 ناقصة — أعد:  s25-update install-windows-layer.sh"
         warn "  • جرّب بناءً محدداً:  --wine-url <رابط بناء amd64-wow64>"
         warn "  السجل الكامل: /tmp/wineboot.log"
     fi
