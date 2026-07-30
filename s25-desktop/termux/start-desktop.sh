@@ -76,28 +76,73 @@ if ! pgrep -x pulseaudio >/dev/null 2>&1; then
 fi
 
 # ── خادم X (Termux:X11) ────────────────────────────────────────────────
-if [ "$MODE" != "shell" ]; then
-    if [ ! -e "$XSOCK" ]; then
-        log "تشغيل خادم X على $XDISPLAY…"
-        mkdir -p "$TMP/.X11-unix"
-        termux-x11 "$XDISPLAY" >/dev/null 2>&1 &
-    else
-        log "خادم X يعمل مسبقاً على $XDISPLAY"
-    fi
+X11_LOG="$TMP/s25-termux-x11.log"
+X11_LOCK="$TMP/.X${XDISPLAY#:}-lock"
 
-    # فتح واجهة العرض (تطبيق Termux:X11)
+# بقايا جلسة قُطعت: ملف قفل بلا خادم يعمل يجعل termux-x11 يرفض البدء بصمت
+x11_clean_stale() {
+    pgrep -f 'termux-x11' >/dev/null 2>&1 && return 0
+    rm -f "$X11_LOCK" "$XSOCK" 2>/dev/null || true
+}
+
+x11_kill_all() {
+    pkill -f 'termux-x11' >/dev/null 2>&1 || true
+    command -v am >/dev/null 2>&1 && am force-stop com.termux.x11 >/dev/null 2>&1 || true
+    sleep 2
+    rm -f "$X11_LOCK" "$XSOCK" 2>/dev/null || true
+}
+
+x11_start() {
+    mkdir -p "$TMP/.X11-unix"
+    log "تشغيل خادم X على $XDISPLAY…"
+    termux-x11 "$XDISPLAY" >"$X11_LOG" 2>&1 &
+    # في Termux:X11 التطبيق نفسه هو خادم X — لا يظهر المقبس قبل أن يعمل التطبيق
     if command -v am >/dev/null; then
         am start --user 0 -n com.termux.x11/com.termux.x11.MainActivity >/dev/null 2>&1 \
             || warn "افتح تطبيق Termux:X11 يدوياً"
     fi
+}
 
-    for _ in $(seq 1 30); do
-        [ -e "$XSOCK" ] && break
+x11_wait() { # x11_wait <ثوانٍ>
+    local left="$1"
+    while [ "$left" -gt 0 ]; do
+        [ -e "$XSOCK" ] && return 0
         sleep 1
+        left=$((left - 1))
     done
-    [ -e "$XSOCK" ] || die "لم يبدأ خادم X.
-تأكد من تثبيت تطبيق Termux:X11 (APK) وفتحه مرة واحدة:
-  https://github.com/termux/termux-x11/releases"
+    return 1
+}
+
+if [ "$MODE" != "shell" ]; then
+    if [ -e "$XSOCK" ]; then
+        log "خادم X يعمل مسبقاً على $XDISPLAY"
+    else
+        x11_clean_stale
+        x11_start
+        if ! x11_wait 30; then
+            warn "لم يظهر مقبس X — تنظيف بقايا الجلسة السابقة وإعادة المحاولة"
+            x11_kill_all
+            x11_start
+            x11_wait 30 || {
+                if [ -s "$X11_LOG" ]; then
+                    printf '  ── مخرجات termux-x11 ──\n' >&2
+                    tail -12 "$X11_LOG" | sed 's/^/  /' >&2
+                fi
+                die "لم يبدأ خادم X على $XDISPLAY.
+
+جرّب بالترتيب:
+  1. افتح تطبيق Termux:X11 يدوياً من قائمة التطبيقات واتركه مفتوحاً،
+     ثم أعد تشغيل هذا الأمر.
+  2. s25-stop   ثم أعد المحاولة (ينظّف كل البقايا).
+  3. إن كان التطبيق غير مثبت، ثبّت app-arm64-v8a-debug.apk من:
+     https://github.com/termux/termux-x11/releases
+  4. أوقف تحسين البطارية لتطبيق Termux:X11 — أندرويد يقتله في الخلفية:
+     الإعدادات ▸ التطبيقات ▸ Termux:X11 ▸ البطارية ▸ غير مقيّد
+
+السجل: $X11_LOG"
+            }
+        fi
+    fi
 fi
 
 # ── الدخول إلى الحاوية وتشغيل الجلسة ───────────────────────────────────

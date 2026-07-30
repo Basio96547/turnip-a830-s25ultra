@@ -160,10 +160,36 @@ if ! plogin "test -r /opt/s25/src/bootstrap-debian.sh" >/dev/null 2>&1; then
 fi
 ok "الحمولة مرئية داخل الحاوية"
 
+# install_termux_commands — أوامر Termux التي يشغّلها المستخدم مباشرة.
+# تُثبَّت في وضع --payload-only أيضاً: بدون ذلك يبقى s25-desktop و s25-stop
+# على نسخهما القديمة بعد كل تحديث — نفس علّة قِدَم السكربتات داخل الحاوية.
+install_termux_commands() {
+    step "تثبيت أوامر التشغيل في Termux"
+    install -Dm755 "$HERE/start-desktop.sh"    "$PREFIX/bin/s25-desktop"
+    install -Dm755 "$HERE/stop-desktop.sh"     "$PREFIX/bin/s25-stop"
+    install -Dm755 "$HERE/update-container.sh" "$PREFIX/bin/s25-update"
+    mkdir -p "$PREFIX/etc"
+    cat > "$PREFIX/etc/s25-desktop.conf" <<EOF
+# إعدادات نظام S25 Desktop — عدّلها كما تشاء
+S25_DISTRO=$DISTRO
+S25_REPO=$REPO_ROOT
+S25_ROOTFS=$ROOTFS
+S25_BIND_SDCARD=$BIND_SDCARD
+# S25_GPU=auto        # auto | off  (off = رسوميات بالمعالج)
+# S25_DPI=140         # كثافة النقاط داخل سطح المكتب
+# S25_SCALE=1.4       # تكبير واجهة البرامج
+# TU_DEBUG=sysmem     # مطلوب لـ A830 (GMEM يسبب تعليق الـ GPU)
+EOF
+    ok "s25-desktop · s25-stop · s25-update جاهزة"
+}
+
 if [ "$PAYLOAD_ONLY" = 1 ]; then
+    install_termux_commands
     ok "تم تحديث سكربتات النظام داخل الحاوية (/opt/s25/src)"
     exit 0
 fi
+
+install_termux_commands
 
 step "تهيئة النظام الأساسي وسطح مكتب XFCE"
 plogin "S25_ASSUME_YES=1 bash /opt/s25/src/bootstrap-debian.sh" \
@@ -192,25 +218,6 @@ else
     plogin "S25_ASSUME_YES=1 bash /opt/s25/src/install-windows-layer.sh" \
         || warn "فشل تثبيت طبقة ويندوز — راجع docs/WINDOWS.md"
 fi
-
-# ── 4. تثبيت أوامر التشغيل في Termux ───────────────────────────────────
-step "تثبيت أوامر التشغيل في Termux"
-install -Dm755 "$HERE/start-desktop.sh"    "$PREFIX/bin/s25-desktop"
-install -Dm755 "$HERE/stop-desktop.sh"     "$PREFIX/bin/s25-stop"
-install -Dm755 "$HERE/update-container.sh" "$PREFIX/bin/s25-update"
-mkdir -p "$PREFIX/etc"
-cat > "$PREFIX/etc/s25-desktop.conf" <<EOF
-# إعدادات نظام S25 Desktop — عدّلها كما تشاء
-S25_DISTRO=$DISTRO
-S25_REPO=$REPO_ROOT
-S25_ROOTFS=$ROOTFS
-S25_BIND_SDCARD=$BIND_SDCARD
-# S25_GPU=auto        # auto | off  (off = رسوميات بالمعالج)
-# S25_DPI=140         # كثافة النقاط داخل سطح المكتب
-# S25_SCALE=1.4       # تكبير واجهة البرامج
-# TU_DEBUG=sysmem     # مطلوب لـ A830 (GMEM يسبب تعليق الـ GPU)
-EOF
-ok "s25-desktop · s25-stop · s25-update جاهزة"
 
 
 step "التشخيص النهائي"
