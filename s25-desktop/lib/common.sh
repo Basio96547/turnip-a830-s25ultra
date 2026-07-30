@@ -49,8 +49,29 @@ retry() {
 }
 
 # ── مساعدات apt (داخل الحاوية) ─────────────────────────────────────────
+# apt_proot_config — إعدادات تجعل apt مستقراً داخل حاوية proot.
+# بدونها يظهر سيل من التحذيرات: "Tried to start delayed item … but failed"
+# لأن طابور التنزيل المتوازي ومستخدم _apt المعزول لا يعملان جيداً تحت proot.
+apt_proot_config() {
+    [ "$(id -u)" = "0" ] || return 0
+    [ -d /etc/apt/apt.conf.d ] || return 0
+    [ -f /etc/apt/apt.conf.d/99-s25-proot ] && return 0
+    cat > /etc/apt/apt.conf.d/99-s25-proot <<'APTEOF'
+// إعدادات S25 Desktop — ملائمة لـ apt داخل proot
+APT::Sandbox::User "root";
+Acquire::Queue-Mode "access";
+Acquire::http::Pipeline-Depth "0";
+Acquire::http::Timeout "30";
+Acquire::https::Timeout "30";
+Acquire::ForceIPv4 "true";
+Acquire::Retries "3";
+APTEOF
+    ok "ضُبطت إعدادات apt الملائمة لـ proot"
+}
+
 apt_refresh() {
     export DEBIAN_FRONTEND=noninteractive
+    apt_proot_config
     retry 4 apt-get update -qq
 }
 
@@ -126,7 +147,7 @@ banner() {
     printf '%s' "$C_G"
     cat <<'EOF'
 ╔══════════════════════════════════════════════════════════════════╗
-║   S25 Desktop — نظام لينكس + Claude PC + Chrome على الجوال       ║
+║   S25 Desktop — تشغيل برامج ويندوز (.exe) على الجوال              ║
 ║   Galaxy S25 Ultra · Snapdragon 8 Elite · Adreno 830v2 (Turnip)  ║
 ╚══════════════════════════════════════════════════════════════════╝
 EOF
