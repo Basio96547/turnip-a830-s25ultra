@@ -132,6 +132,17 @@ apt_install build-essential pkg-config git curl ca-certificates patch \
 apt_install_soft glslang-tools libelf-dev libwayland-dev python3-ply cmake \
     libxcb-dri2-0-dev libxrender-dev
 
+# Mesa يطلب البرنامج باسم glslangValidator تحديداً، لكن نسخ glslang الحديثة
+# تسمّيه glslang فقط — نصنع وصلة حتى لا يفشل meson setup
+if ! have glslangValidator; then
+    if have glslang; then
+        ln -sf "$(command -v glslang)" /usr/local/bin/glslangValidator
+        ok "glslangValidator ← $(command -v glslang)"
+    else
+        warn "glslangValidator غير متوفر — إن فشل meson setup فثبّت: apt-get install glslang-tools"
+    fi
+fi
+
 # meson حديث (نسخ التوزيعة قديمة على bookworm)
 MESON_VER="$(meson --version 2>/dev/null || echo 0)"
 if ! version_ge "$MESON_VER" "$MESON_MIN"; then
@@ -323,9 +334,22 @@ for attempt in 1 2 3 4; do
         setup_ok=1
         break
     fi
-    grep -E 'ERROR|Unknown option' "$MESON_LOG" | head -4 | sed 's/^/    /'
-    feat="$(grep -oE 'Feature [a-z0-9_-]+ cannot be enabled' "$MESON_LOG" | head -1 | awk '{print $2}')"
-    unknown="$(grep -oE 'Unknown options?: *"?[a-z0-9_-]+' "$MESON_LOG" | head -1 | sed 's/.*: *"*//')"
+    # `|| true` ضروري: بلا مطابقة تُعيد grep رمز 1، وتحت pipefail+set -e ينتهي
+    # السكربت هنا قبل أن يصل إلى رسالة الخطأ المفيدة في الأسفل
+    grep -E 'ERROR|Unknown option' "$MESON_LOG" | sed -n '1,4p' | sed 's/^/    /' || true
+    feat="$(grep -oE 'Feature [a-z0-9_-]+ cannot be enabled' "$MESON_LOG" \
+            | sed -n '1s/^Feature \([a-z0-9_-]*\).*/\1/p' || true)"
+    unknown="$(grep -oE 'Unknown options?: *"?[a-z0-9_-]+' "$MESON_LOG" \
+            | sed -n '1s/.*: *"*//p' || true)"
+    # برامج مفقودة لا يمكن إصلاحها بتعطيل خيار — نوقف برسالة صريحة
+    if grep -qE "ERROR: Program '[^']*' not found" "$MESON_LOG"; then
+        MISSING_PROG="$(grep -oE "Program '[^']*' not found" "$MESON_LOG" \
+                        | sed -n "1s/Program '\\([^']*\\)'.*/\\1/p" || true)"
+        die "meson يحتاج البرنامج «${MISSING_PROG:-مجهول}» وهو غير مثبت.
+    ثبّته ثم أعد المحاولة، مثلاً:
+      apt-get install -y glslang-tools     (يوفّر glslangValidator)
+    السجل الكامل: $MESON_LOG"
+    fi
     if [ -n "$feat" ]; then
         warn "محاولة $attempt: meson يرفض تفعيل الميزة «$feat» — تعطيلها وإعادة المحاولة"
         meson_args_disable "$feat"

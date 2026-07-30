@@ -86,8 +86,10 @@ S25_HOME="${S25_HOME:-/home/$S25_USER}"
 
 # ── دالة: أحدث أصل تنزيل من إصدارات GitHub ─────────────────────────────
 latest_asset() { # latest_asset <owner/repo> <نمط grep>
+    # sed -n 1p لا head: head تخرج بعد أول سطر فيصل SIGPIPE إلى grep/curl
+    # وتُعيد الأنبوبة 141 تحت pipefail فيبدو أن لا أصل للتنزيل
     curl -fsSL "https://api.github.com/repos/$1/releases/latest" 2>/dev/null \
-        | grep -oE "https://[^\"]*$2" | head -1
+        | grep -oE "https://[^\"]*$2" | sed -n 1p
 }
 
 if [ "$PREFIX_ONLY" = 0 ]; then
@@ -117,7 +119,9 @@ install_wine_build() {
         warn "بناء Wine لا يحتوي bin/wine"; return 1; }
 
     # مُحمّل 32-بت يعني WoW64 القديم — يحتاج box86 غير المدعوم هنا
-    if file -L "$WINE_DIR/bin/wine" 2>/dev/null | grep -q 'ELF 32-bit'; then
+    local wine_type
+    wine_type="$(file -L "$WINE_DIR/bin/wine" 2>/dev/null || true)"
+    if case "$wine_type" in *'ELF 32-bit'*) true ;; *) false ;; esac; then
         warn "بناء WoW64 قديم (bin/wine ملف 32-بت) — برامج 32-بت لن تعمل بلا box86"
     else
         ok "بناء WoW64 الجديد ✓ (برامج 32-بت تعمل عبر box64 وحده)"

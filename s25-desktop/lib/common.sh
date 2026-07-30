@@ -137,8 +137,21 @@ apt_refresh() {
     return 0
 }
 
+# apt_available <حزمة> — هل للحزمة مُرشَّح للتثبيت في المصادر الحالية؟
+#
+# بلا أنابيب عن قصد: كتابة `apt-cache policy X | grep -q` تفشل دائماً تحت
+# `set -o pipefail` لأن grep -q يخرج بعد أول مطابقة فيصل SIGPIPE إلى apt-cache
+# فتُعيد الأنبوبة 141 — فتبدو كل الحزم «غير متوفرة». كان ذلك يُسقط صامتاً كل
+# استدعاءات apt_install_soft و apt_install_any (مكتبات amd64 كاملةً، و
+# glslang-tools التي بدونها يفشل بناء Mesa).
 apt_available() {
-    apt-cache policy "$1" 2>/dev/null | grep -q 'Candidate: [^(]'
+    local pol
+    pol="$(apt-cache policy "$1" 2>/dev/null)" || return 1
+    case "$pol" in
+        *"Candidate: (none)"*) return 1 ;;
+        *"Candidate: "*)       return 0 ;;
+        *)                     return 1 ;;
+    esac
 }
 
 # apt_install <حزم...> — تثبيت إلزامي
@@ -194,7 +207,8 @@ build_jobs() {
 
 # version_ge <a> <b> — هل a >= b (مقارنة نسخ رقمية)
 version_ge() {
-    [ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | head -1)" = "$2" ]
+    # sort -V وحدها بلا head: head تخرج مبكراً فتُرسل SIGPIPE إلى sort
+    [ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | sed -n 1p)" = "$2" ]
 }
 
 confirm() {

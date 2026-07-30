@@ -108,6 +108,20 @@ if [ -r /opt/s25/etc/windows.sh ]; then
         fail "Wine" "غير موجود — أعد تشغيل install-windows-layer.sh"
     fi
 
+    # مكتبات amd64: بدونها لا يُقلع Wine ولا برامج ويندوز مهما كان box64 سليماً
+    AMD64_N=0
+    for l in libc6:amd64 libstdc++6:amd64 libgcc-s1:amd64 libx11-6:amd64 libfreetype6:amd64; do
+        if [ "$(dpkg-query -W -f='${db:Status-Status}' "$l" 2>/dev/null)" = "installed" ]; then
+            AMD64_N=$((AMD64_N + 1))
+        fi
+    done
+    if [ "$AMD64_N" -ge 4 ]; then
+        pass "مكتبات amd64" "$AMD64_N/5 من الأساسية"
+    else
+        fail "مكتبات amd64" "$AMD64_N/5 فقط — Wine لن يقلع:
+      s25-update install-windows-layer.sh"
+    fi
+
     if [ -d "${WINEPREFIX:-/nonexistent}/drive_c" ]; then
         # بيئة كاملة تحتوي ~580 مكتبة في system32؛ الأقل يعني wineboot لم يكتمل
         WIN_DLLS="$(find "$WINEPREFIX/drive_c/windows/system32" -maxdepth 1 -name '*.dll' 2>/dev/null | wc -l)"

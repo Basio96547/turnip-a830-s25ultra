@@ -38,7 +38,10 @@ install_box64() {
 #      != … debian-archive-keyring.pgp
 # لأن اسم ملف المفاتيح تغيّر بين الإصدارات. لذلك نزيل أي أثر لتلك الطريقة.
 enable_amd64_multiarch() {
-    if dpkg --print-foreign-architectures 2>/dev/null | grep -qx amd64; then
+    local foreign
+    foreign="$(dpkg --print-foreign-architectures 2>/dev/null || true)"
+    # بلا أنبوب إلى grep -q: يخرج مبكراً فتُعيد الأنبوبة 141 تحت pipefail
+    if printf '%s\n' "$foreign" | grep -Eq '^amd64$'; then
         ok "معمارية amd64 مضافة مسبقاً"
     else
         dpkg --add-architecture amd64

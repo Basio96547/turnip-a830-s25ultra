@@ -29,8 +29,11 @@ TERMUX_PKGS=(
     openssl
     nano
 )
+# قائمة الحزم المثبتة مرة واحدة في متغير: كتابة `pkg list-installed | grep -q`
+# تفشل دائماً تحت pipefail لأن grep -q يخرج مبكراً فيصل SIGPIPE إلى pkg (رمز 141)
+INSTALLED_PKGS="$(pkg list-installed 2>/dev/null || true)"
 for p in "${TERMUX_PKGS[@]}"; do
-    if pkg list-installed 2>/dev/null | grep -q "^$p/"; then
+    if printf '%s\n' "$INSTALLED_PKGS" | grep -Eq "^$p/"; then
         ok "$p (مثبت)"
     elif retry 3 pkg install -y "$p" >/dev/null 2>&1; then
         ok "$p"
@@ -53,10 +56,14 @@ done
 x11_app_state() {
     have pm || return 2
     if pm path com.termux.x11 >/dev/null 2>&1; then return 0; fi
-    if pm list packages --user 0 com.termux.x11 2>/dev/null | grep -q 'com.termux.x11'; then return 0; fi
-    if pm list packages com.termux.x11 2>/dev/null | grep -q 'com.termux.x11'; then return 0; fi
+    local listed all
+    listed="$(pm list packages --user 0 com.termux.x11 2>/dev/null || true)"
+    case "$listed" in *com.termux.x11*) return 0 ;; esac
+    listed="$(pm list packages com.termux.x11 2>/dev/null || true)"
+    case "$listed" in *com.termux.x11*) return 0 ;; esac
     # هل يرى pm أي حزمة إطلاقاً؟ إن لا، فالحجب هو السبب لا غياب التطبيق
-    if [ "$(pm list packages 2>/dev/null | wc -l)" -lt 2 ]; then return 2; fi
+    all="$(pm list packages 2>/dev/null || true)"
+    if [ "$(printf '%s\n' "$all" | grep -c 'package:' || true)" -lt 2 ]; then return 2; fi
     return 1
 }
 
