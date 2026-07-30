@@ -350,6 +350,19 @@ for attempt in 1 2 3 4; do
       apt-get install -y glslang-tools     (يوفّر glslangValidator)
     السجل الكامل: $MESON_LOG"
     fi
+
+    # نسخة أداة قديمة (مثل «glslang >= 12.2 is required») — لا يصلحها خيار meson
+    if grep -q 'ERROR: Problem encountered:' "$MESON_LOG"; then
+        REQ="$(sed -n '1s/.*ERROR: Problem encountered: *//p' \
+               <(grep -m1 'ERROR: Problem encountered:' "$MESON_LOG") || true)"
+        die "Mesa يشترط: ${REQ:-انظر السجل}
+    توزيعة الحاوية تحمل نسخة أقدم من المطلوب. الحلول:
+      • استخدم حزمة Mesa جاهزة بدل البناء (الأسرع):
+          s25-update build-mesa-turnip.sh --from-tarball <رابط الحزمة>
+      • أو ابنِ إصداراً أقدم من Mesa يوافق أدوات توزيعتك:
+          s25-update build-mesa-turnip.sh --mesa-ref mesa-25.2.7
+    السجل الكامل: $MESON_LOG"
+    fi
     if [ -n "$feat" ]; then
         warn "محاولة $attempt: meson يرفض تفعيل الميزة «$feat» — تعطيلها وإعادة المحاولة"
         meson_args_disable "$feat"

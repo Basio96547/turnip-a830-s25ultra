@@ -23,7 +23,7 @@ on:
       base_image:
         description: 'صورة البناء (تحدد أقدم glibc مدعوم)'
         required: false
-        default: 'debian:bookworm'
+        default: 'debian:trixie'
       make_release:
         description: 'نشر الحزمة كـ Release (رابط تحميل مباشر للجوال)'
         required: false
@@ -37,7 +37,7 @@ jobs:
   build:
     # منصة arm64 أصلية — أسرع بكثير من محاكاة QEMU
     runs-on: ubuntu-24.04-arm
-    container: ${{ github.event.inputs.base_image || 'debian:bookworm' }}
+    container: ${{ github.event.inputs.base_image || 'debian:trixie' }}
     timeout-minutes: 300
 
     steps:
@@ -97,8 +97,8 @@ jobs:
             echo "# Mesa (Turnip/KGSL + Zink) لحاويات proot — Adreno 830"
             echo ""
             echo "حزمة جاهزة تُغنيك عن بناء Mesa على الجوال (٤٠ دقيقة – ساعتان)."
-            echo "مبنية لـ glibc/aarch64 داخل \`${{ github.event.inputs.base_image || 'debian:bookworm' }}\`"
-            echo "فتعمل على bookworm و trixie."
+            echo "مبنية لـ glibc/aarch64 داخل \`${{ github.event.inputs.base_image || 'debian:trixie' }}\`"
+            echo "وهي التوزيعة التي يثبّتها المشروع (proot-distro debian)."
             echo ""
             echo "## التثبيت (دقيقتان)"
             echo '```bash'
