@@ -28,10 +28,11 @@ step "1/6 تحديث فهرس الحزم"
 apt_refresh
 
 step "2/6 سطح مكتب XFCE والأدوات الأساسية"
-apt_install xfce4 xfce4-terminal dbus-x11 x11-xserver-utils xauth \
+# openbox إلزامي: وضع التطبيق الواحد (win-claude / win-chrome) يعتمد عليه
+apt_install xfce4 xfce4-terminal openbox dbus-x11 x11-xserver-utils xauth \
     sudo nano less curl wget ca-certificates gnupg locales \
     xdg-utils desktop-file-utils procps psmisc file
-apt_install_soft openbox thunar-archive-plugin xarchiver \
+apt_install_soft thunar-archive-plugin xarchiver \
     xfce4-taskmanager xfce4-screenshooter mousepad \
     x11-utils mesa-utils vulkan-tools pulseaudio-utils xclip \
     gnome-themes-extra adwaita-icon-theme \
