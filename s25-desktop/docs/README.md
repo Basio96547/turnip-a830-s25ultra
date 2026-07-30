@@ -59,15 +59,25 @@
 
 ### 3.1 الطريقة السريعة (موصى بها)
 
-بناء Mesa على الجوال يستغرق 40 دقيقة إلى ساعتين. الأسرع تنزيل حزمة مبنية من
-GitHub Actions (سير العمل `Build Mesa (Turnip KGSL + Zink) — proot glibc arm64`):
+بناء Mesa على الجوال يستغرق 40 دقيقة إلى ساعتين. الأسرع استخدام حزمة جاهزة
+منشورة في [Releases](https://github.com/Basio96547/turnip-a830-s25ultra/releases)
+(يبنيها سير العمل `Build Mesa (Turnip KGSL + Zink) — proot glibc arm64` على
+معمارية arm64 أصلية داخل `debian:trixie` — نفس توزيعة الحاوية):
 
 ```bash
 pkg install git -y
 git clone -b claude/s25-ultra-emulator-system-fs4ozh https://github.com/basio96547/turnip-a830-s25ultra
 cd turnip-a830-s25ultra
-bash s25-desktop/install.sh \
-  --mesa-tarball ~/storage/downloads/mesa-a830-glibc-arm64.tar.gz
+bash s25-desktop/install.sh --mesa-tarball \
+  https://github.com/Basio96547/turnip-a830-s25ultra/releases/latest/download/mesa-a830-glibc-arm64.tar.gz
+```
+
+`--mesa-tarball` يقبل رابطاً أو مساراً محلياً. ولتبديل Mesa وحدها على نظام
+مثبَّت مسبقاً (دقيقتان، بلا إعادة تثبيت أي شيء آخر):
+
+```bash
+s25-update build-mesa-turnip.sh --from-tarball \
+  https://github.com/Basio96547/turnip-a830-s25ultra/releases/latest/download/mesa-a830-glibc-arm64.tar.gz
 ```
 
 ### 3.2 البناء الكامل على الجهاز
