@@ -326,10 +326,10 @@ for attempt in 1 2 3 4; do
     feat="$(grep -oE 'Feature [a-z0-9_-]+ cannot be enabled' "$MESON_LOG" | head -1 | awk '{print $2}')"
     unknown="$(grep -oE 'Unknown options?: *"?[a-z0-9_-]+' "$MESON_LOG" | head -1 | sed 's/.*: *"*//')"
     if [ -n "$feat" ]; then
-        warn "meson يرفض تفعيل الميزة «$feat» على هذه المنصة — تعطيلها وإعادة المحاولة"
+        warn "محاولة $attempt: meson يرفض تفعيل الميزة «$feat» — تعطيلها وإعادة المحاولة"
         meson_args_disable "$feat"
     elif [ -n "$unknown" ]; then
-        warn "الخيار «$unknown» غير معروف في هذه النسخة من Mesa — إزالته وإعادة المحاولة"
+        warn "محاولة $attempt: الخيار «$unknown» غير معروف في هذه النسخة — إزالته وإعادة المحاولة"
         meson_args_drop "$unknown"
     else
         tail -25 "$MESON_LOG" | sed 's/^/    /'
