@@ -6,7 +6,7 @@ name: Build Mesa (Turnip KGSL + Zink) — proot glibc arm64
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, 'claude/**']
     paths:
       - 's25-desktop/container/build-mesa-turnip.sh'
       - 's25-desktop/lib/common.sh'
