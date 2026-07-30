@@ -11,6 +11,7 @@
     <string name="status_missing_hint">ثبّت التطبيقات الناقصة أولاً، ثم شغّل سكربت التثبيت داخل Termux:\nbash s25-desktop/install.sh</string>
 
     <string name="btn_install">①  تثبيت النظام (مرة واحدة)</string>
+    <string name="btn_update">⟳  تحديث النظام</string>
     <string name="btn_win_claude">✦  Claude Desktop (ويندوز .exe)</string>
     <string name="btn_win_chrome">◉  Chrome (ويندوز .exe)</string>
     <string name="btn_desktop">▶  سطح المكتب الكامل</string>
@@ -28,6 +29,7 @@
     <string name="not_installed_body">أزرار التشغيل تحتاج تثبيت النظام داخل Termux أولاً (حاوية لينكس + تعريف Turnip + طبقة ويندوز).\n\nاضغط «تثبيت الآن» وسيفتح Termux ويبدأ التثبيت — يأخذ وقتاً طويلاً، أوصل الشاحن ولا تغلق Termux.</string>
     <string name="install_now">تثبيت الآن</string>
     <string name="run_anyway">تشغيل على أي حال</string>
+    <string name="updating">جارٍ تحديث النظام داخل Termux (سحب أحدث كود + تحديث الحاوية).\nراقب التقدّم هناك.</string>
     <string name="installing">بدأ التثبيت داخل Termux.\nراقب التقدّم هناك — لا تغلق التطبيق.\nعند ظهور «تم التثبيت ✓» ارجع واضغط زر التشغيل.</string>
     <string name="starting">جارٍ تشغيل %1$s…\nسيتم الانتقال إلى شاشة العرض تلقائياً.\n\nإن بقيت الشاشة سوداء: افتح Termux ونفّذ\nbash s25-desktop/install.sh</string>
     <string name="stopped">تم إيقاف النظام وتحرير الذاكرة.</string>

@@ -47,6 +47,11 @@
             android:layout_marginTop="18dp"
             android:text="@string/btn_install" />
 
+        <Button
+            android:id="@+id/btn_update"
+            style="@style/ActionButton"
+            android:text="@string/btn_update" />
+
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"

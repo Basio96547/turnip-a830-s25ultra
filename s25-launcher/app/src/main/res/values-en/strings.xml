@@ -8,6 +8,7 @@
     <string name="status_missing_hint">Install the missing apps first, then run inside Termux:\nbash s25-desktop/install.sh</string>
 
     <string name="btn_install">①  Install the system (once)</string>
+    <string name="btn_update">⟳  Update the system</string>
     <string name="btn_win_claude">✦  Claude Desktop (Windows .exe)</string>
     <string name="btn_win_chrome">◉  Chrome (Windows .exe)</string>
     <string name="btn_desktop">▶  Full desktop (XFCE)</string>
@@ -25,6 +26,7 @@
     <string name="not_installed_body">The run buttons need the system installed inside Termux first (Linux container + Turnip driver + Windows layer).\n\nTap "Install now"; Termux opens and installation begins — it takes a long time, keep the charger connected and Termux open.</string>
     <string name="install_now">Install now</string>
     <string name="run_anyway">Run anyway</string>
+    <string name="updating">Updating inside Termux (pull latest code + refresh the container).\nWatch the progress there.</string>
     <string name="installing">Installation started inside Termux.\nWatch the progress there — do not close it.\nWhen it prints "تم التثبيت ✓", come back and press a run button.</string>
     <string name="starting">Starting %1$s…\nSwitching to the display automatically.\n\nIf the screen stays black: open Termux and run\nbash s25-desktop/install.sh</string>
     <string name="stopped">Stopped. Memory released.</string>

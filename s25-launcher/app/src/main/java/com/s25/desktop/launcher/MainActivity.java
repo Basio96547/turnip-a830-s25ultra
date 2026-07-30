@@ -62,6 +62,15 @@ public class MainActivity extends Activity {
             + "git -C turnip-a830-s25ultra checkout " + REPO_BRANCH + " && "
             + "bash turnip-a830-s25ultra/s25-desktop/install.sh";
 
+    /**
+     * تحديث النظام: يفضّل s25-update (يسحب الكود ويحدّث نسخة السكربتات داخل
+     * الحاوية)، وإلا يسحب ويشغّل المُثبّت — لأن الحاوية تعمل بنسخة من المستودع
+     * ولا تراها git pull.
+     */
+    private static final String UPDATE_CMD =
+            "if command -v s25-update >/dev/null 2>&1; then exec s25-update; fi; "
+            + "cd \"$HOME/turnip-a830-s25ultra\" && git pull && bash s25-desktop/install.sh";
+
     private static final String PREFS = "s25";
     private static final String KEY_INSTALL_STARTED = "install_started";
 
@@ -79,6 +88,9 @@ public class MainActivity extends Activity {
 
         bind(R.id.btn_install, new Runnable() {
             @Override public void run() { startInstall(); }
+        });
+        bind(R.id.btn_update, new Runnable() {
+            @Override public void run() { startUpdate(); }
         });
         bind(R.id.btn_win_claude, new Runnable() {
             @Override public void run() { launchMode("win-claude"); }
@@ -220,6 +232,17 @@ public class MainActivity extends Activity {
         if (runInTermux(TERMUX_BIN + "bash", new String[]{"-lc", INSTALL_CMD}, false, true)) {
             prefs().edit().putBoolean(KEY_INSTALL_STARTED, true).apply();
             status.setText(R.string.installing);
+        }
+    }
+
+    /** تحديث النظام في جلسة Termux مرئية. */
+    private void startUpdate() {
+        if (!isInstalled(TERMUX_PKG)) {
+            showInstallDialog(R.string.need_termux, TERMUX_DOWNLOAD);
+            return;
+        }
+        if (runInTermux(TERMUX_BIN + "bash", new String[]{"-lc", UPDATE_CMD}, false, true)) {
+            status.setText(R.string.updating);
         }
     }
 
