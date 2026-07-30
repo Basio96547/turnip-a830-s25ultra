@@ -45,9 +45,24 @@ EOF
     *) die "وضع غير معروف: $1 (استخدم --help)" ;;
 esac
 
-ROOTFS="$PREFIX/var/lib/proot-distro/installed-rootfs/$DISTRO"
-[ -d "$ROOTFS" ] || die "الحاوية '$DISTRO' غير مثبتة — شغّل: bash s25-desktop/install.sh"
 command -v proot-distro >/dev/null || die "proot-distro غير مثبت"
+
+# جذر نظام الملفات: المُثبّت يحفظه في الإعدادات؛ وإلا نكتشفه (التخطيط يختلف
+# بين نسخ proot-distro: installed-rootfs/<alias> أو containers/<alias>/rootfs)
+ROOTFS="${S25_ROOTFS:-}"
+if [ -z "$ROOTFS" ] || [ ! -r "$ROOTFS/etc/os-release" ]; then
+    ROOTFS=""
+    for c in "$PREFIX/var/lib/proot-distro/installed-rootfs/$DISTRO" \
+             "$PREFIX/var/lib/proot-distro/containers/$DISTRO/rootfs" \
+             "$PREFIX/var/lib/proot-distro/containers/$DISTRO/root" \
+             "$PREFIX/var/lib/proot-distro/containers/$DISTRO"; do
+        if [ -r "$c/etc/os-release" ]; then ROOTFS="$c"; break; fi
+    done
+fi
+if [ -z "$ROOTFS" ]; then
+    proot-distro login "$DISTRO" -- /bin/true >/dev/null 2>&1 \
+        || die "الحاوية '$DISTRO' غير مثبتة — شغّل: bash s25-desktop/install.sh"
+fi
 
 # ── منع نوم الجهاز أثناء الجلسة ────────────────────────────────────────
 command -v termux-wake-lock >/dev/null && termux-wake-lock >/dev/null 2>&1 || true
@@ -87,11 +102,15 @@ fi
 
 # ── الدخول إلى الحاوية وتشغيل الجلسة ───────────────────────────────────
 BINDS=()
-[ -d /sdcard ] && BINDS+=(--bind "/sdcard:/mnt/sdcard")
+if [ "${S25_BIND_SDCARD:-1}" = "1" ] && [ -d /sdcard ]; then
+    BINDS+=(--bind "/sdcard:/mnt/sdcard")
+fi
 [ -e /dev/kgsl-3d0 ] || warn "‏/dev/kgsl-3d0 غير موجود — تسريع Turnip لن يعمل"
 
 USER_ARG=()
-if grep -q '^s25:' "$ROOTFS/etc/passwd" 2>/dev/null; then
+if [ -n "$ROOTFS" ] && grep -q '^s25:' "$ROOTFS/etc/passwd" 2>/dev/null; then
+    USER_ARG=(--user s25)
+elif proot-distro login "$DISTRO" -- id -u s25 >/dev/null 2>&1; then
     USER_ARG=(--user s25)
 fi
 

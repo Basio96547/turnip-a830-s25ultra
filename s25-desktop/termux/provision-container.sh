@@ -78,12 +78,27 @@ else
     ok "تم تثبيت $DISTRO"
 fi
 
-# نحتاج مسار نظام الملفات لنسخ الحمولة — نكتشفه إن كان مختلفاً
-if [ ! -d "$ROOTFS" ]; then
-    FOUND="$(find "$PREFIX/var/lib/proot-distro" -maxdepth 3 -type d -name "$DISTRO" 2>/dev/null | head -1)"
-    [ -n "$FOUND" ] && ROOTFS="$FOUND"
-fi
-[ -d "$ROOTFS" ] || die "لم يتم العثور على نظام ملفات الحاوية داخل $PREFIX/var/lib/proot-distro"
+# جذر نظام الملفات: التخطيط يختلف بين نسخ proot-distro
+#   قديم : installed-rootfs/<alias>
+#   حديث : containers/<alias>/rootfs   (أو containers/<alias>)
+# نتعرّف عليه بوجود etc/os-release لا بالتخمين.
+detect_rootfs() {
+    local base="$PREFIX/var/lib/proot-distro" cand
+    for cand in \
+        "$base/installed-rootfs/$DISTRO" \
+        "$base/containers/$DISTRO/rootfs" \
+        "$base/containers/$DISTRO/root" \
+        "$base/containers/$DISTRO"; do
+        if [ -r "$cand/etc/os-release" ]; then printf '%s' "$cand"; return 0; fi
+    done
+    cand="$(find "$base" -maxdepth 6 -type f -name os-release -path "*$DISTRO*" 2>/dev/null | head -1)"
+    if [ -n "$cand" ]; then printf '%s' "$(dirname "$(dirname "$cand")")"; return 0; fi
+    return 1
+}
+
+ROOTFS="$(detect_rootfs)" || die "لم يتم العثور على جذر نظام ملفات الحاوية داخل
+    $PREFIX/var/lib/proot-distro
+جرّب: proot-distro reset $DISTRO ثم أعد تشغيل المُثبّت"
 log "نظام ملفات الحاوية: $ROOTFS"
 
 # ── 2. نسخ حمولة التثبيت داخل الحاوية ──────────────────────────────────
@@ -122,12 +137,25 @@ fi
 
 # ── 3. تشغيل خطوات التهيئة داخل الحاوية ────────────────────────────────
 BINDS=()
-[ -d /sdcard ] && BINDS+=(--bind "/sdcard:/mnt/sdcard")
+BIND_SDCARD=0
+if [ -d /sdcard ] && ! proot-distro login "$DISTRO" -- test -d /mnt/sdcard >/dev/null 2>&1; then
+    # النسخ الحديثة تربط التخزين تلقائياً — لا نكرّر الربط لتجنّب تحذير التعارض
+    BINDS+=(--bind "/sdcard:/mnt/sdcard")
+    BIND_SDCARD=1
+fi
 
 # plogin <أمر داخل الحاوية>
 plogin() {
     proot-distro login "$DISTRO" --shared-tmp "${BINDS[@]}" -- /bin/bash -c "$1"
 }
+
+# تحقق أن ما نسخناه يُرى فعلاً من داخل الحاوية (يكشف مسار جذر خاطئ فوراً)
+if ! plogin "test -r /opt/s25/src/bootstrap-debian.sh" >/dev/null 2>&1; then
+    die "الحمولة نُسخت إلى $PAYLOAD لكنها غير مرئية داخل الحاوية.
+هذا يعني أن جذر نظام الملفات المكتشف غير صحيح. أبلغ عن المسار التالي:
+    $ROOTFS"
+fi
+ok "الحمولة مرئية داخل الحاوية"
 
 step "تهيئة النظام الأساسي وسطح مكتب XFCE"
 plogin "S25_ASSUME_YES=1 bash /opt/s25/src/bootstrap-debian.sh" \
@@ -165,6 +193,8 @@ mkdir -p "$PREFIX/etc"
 cat > "$PREFIX/etc/s25-desktop.conf" <<EOF
 # إعدادات نظام S25 Desktop — عدّلها كما تشاء
 S25_DISTRO=$DISTRO
+S25_ROOTFS=$ROOTFS
+S25_BIND_SDCARD=$BIND_SDCARD
 # S25_GPU=auto        # auto | off  (off = رسوميات بالمعالج)
 # S25_DPI=140         # كثافة النقاط داخل سطح المكتب
 # S25_SCALE=1.4       # تكبير واجهة البرامج
