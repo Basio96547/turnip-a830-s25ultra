@@ -35,14 +35,56 @@ have proot-distro || die "proot-distro غير مثبت — شغّل setup-termux
 ROOTFS="$PREFIX/var/lib/proot-distro/installed-rootfs/$DISTRO"
 
 # ── 1. تثبيت التوزيعة ──────────────────────────────────────────────────
-if [ -d "$ROOTFS" ]; then
-    ok "حاوية $DISTRO مثبتة مسبقاً"
+# لا نعتمد على وجود المجلد: مسار نظام الملفات يختلف بين نسخ proot-distro.
+# الفحص الحقيقي هو أن الدخول إلى الحاوية ينجح.
+container_ok() {
+    proot-distro login "$DISTRO" -- /bin/true >/dev/null 2>&1
+}
+
+# يعيد: 0 نجح · 2 موجودة مسبقاً (وقد تكون معطوبة) · 1 فشل حقيقي
+try_install_container() {
+    local out
+    if out="$(proot-distro install "$DISTRO" 2>&1)"; then
+        return 0
+    fi
+    printf '%s\n' "$out" | tail -4 | sed 's/^/    /'
+    case "$out" in
+        *"already exists"*) return 2 ;;
+        *) return 1 ;;
+    esac
+}
+
+if container_ok; then
+    ok "حاوية $DISTRO موجودة وتعمل"
 else
     log "تنزيل وتثبيت حاوية $DISTRO (قد يستغرق عدة دقائق)…"
-    retry 3 proot-distro install "$DISTRO" || die "فشل تثبيت الحاوية $DISTRO"
+    rc=0
+    try_install_container || rc=$?
+    if [ "$rc" = 2 ]; then
+        warn "proot-distro يقول إن الحاوية موجودة، لكن الدخول إليها يفشل — أي أنها ناقصة"
+        if [ "${S25_RESET_CONTAINER:-0}" = 1 ] || confirm "إعادة تهيئة الحاوية $DISTRO؟ (يحذف محتواها)"; then
+            proot-distro reset "$DISTRO" >/dev/null 2>&1 || proot-distro remove "$DISTRO" >/dev/null 2>&1 || true
+            retry 2 proot-distro install "$DISTRO" || die "فشل تثبيت الحاوية $DISTRO"
+        else
+            die "أعد التهيئة يدوياً ثم شغّل المُثبّت من جديد:
+    proot-distro reset $DISTRO"
+        fi
+    elif [ "$rc" = 1 ]; then
+        # فشل شبكة أو تنزيل — يستحق إعادة المحاولة
+        retry 2 proot-distro install "$DISTRO" || die "فشل تثبيت الحاوية $DISTRO"
+    fi
+    container_ok || die "الحاوية $DISTRO لا تعمل بعد التثبيت.
+جرّب:  proot-distro reset $DISTRO  ثم أعد تشغيل المُثبّت"
     ok "تم تثبيت $DISTRO"
 fi
-[ -d "$ROOTFS" ] || die "لم يتم العثور على نظام الملفات: $ROOTFS"
+
+# نحتاج مسار نظام الملفات لنسخ الحمولة — نكتشفه إن كان مختلفاً
+if [ ! -d "$ROOTFS" ]; then
+    FOUND="$(find "$PREFIX/var/lib/proot-distro" -maxdepth 3 -type d -name "$DISTRO" 2>/dev/null | head -1)"
+    [ -n "$FOUND" ] && ROOTFS="$FOUND"
+fi
+[ -d "$ROOTFS" ] || die "لم يتم العثور على نظام ملفات الحاوية داخل $PREFIX/var/lib/proot-distro"
+log "نظام ملفات الحاوية: $ROOTFS"
 
 # ── 2. نسخ حمولة التثبيت داخل الحاوية ──────────────────────────────────
 PAYLOAD="$ROOTFS/opt/s25/src"
