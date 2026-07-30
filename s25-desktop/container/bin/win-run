@@ -32,12 +32,27 @@ fi
 command -v box64 >/dev/null 2>&1 || { printf '✗ box64 غير مثبت\n' >&2; exit 1; }
 
 # ── كثافة نقاط ويندوز ──────────────────────────────────────────────────
-# على شاشة 1440×3120 تظهر نوافذ ويندوز بحجم مجهري عند 96 نقطة/بوصة (المبدئي).
-# نضبط LogPixels مرة واحدة لكل قيمة، وعلامة تمنع تكرار العمل في كل تشغيل.
-S25_WIN_DPI="${S25_WIN_DPI:-240}"
+# عند 96 نقطة/بوصة (مبدئي ويندوز) تظهر النوافذ بحجم مجهري على شاشة الجوال.
+# نحسب القيمة من عرض شاشة X الفعلي بدل رقم ثابت: كل 480 بكسل عرضاً = ضعف
+# واحد، فـ 1440 بكسل ← ثلاثة أضعاف (288). القيمة قابلة للتجاوز بـ S25_WIN_DPI.
+win_dpi_auto() {
+    local w=0
+    if command -v xdpyinfo >/dev/null 2>&1; then
+        w="$(xdpyinfo 2>/dev/null | awk '/dimensions:/ {split($2,a,"x"); print a[1]; exit}')"
+    fi
+    case "$w" in ''|*[!0-9]*) w=0 ;; esac
+    [ "$w" -lt 480 ] && { printf '288'; return 0; }   # تعذّر القياس ← افتراض شاشة جوال
+    local d=$(( 96 * w / 480 ))
+    [ "$d" -lt 144 ] && d=144
+    [ "$d" -gt 480 ] && d=480
+    printf '%s' "$d"
+}
+
+S25_WIN_DPI="${S25_WIN_DPI:-$(win_dpi_auto)}"
 dpi_marker="${WINEPREFIX:-/nonexistent}/.s25-dpi-$S25_WIN_DPI"
 if [ -d "${WINEPREFIX:-/nonexistent}" ] && [ ! -f "$dpi_marker" ]; then
-    printf '▶ ضبط كثافة نقاط ويندوز على %s (للتغيير: S25_WIN_DPI=192 أو 144)\n' "$S25_WIN_DPI"
+    printf '▶ كثافة نقاط ويندوز: %s (أكبر: S25_WIN_DPI=384 · أصغر: S25_WIN_DPI=192)\n' \
+        "$S25_WIN_DPI"
     if box64 "$S25_WINE" reg add 'HKEY_CURRENT_USER\Control Panel\Desktop' \
             /v LogPixels /t REG_DWORD /d "$S25_WIN_DPI" /f >/dev/null 2>&1; then
         rm -f "${WINEPREFIX}"/.s25-dpi-* 2>/dev/null || true

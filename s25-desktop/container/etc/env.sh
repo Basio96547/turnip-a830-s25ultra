@@ -7,8 +7,8 @@
 #
 #  المتغيرات القابلة للضبط من الخارج:
 #    S25_GPU=auto|off     auto = استخدم Turnip إن توفر، off = رسوميات المعالج
-#    S25_DPI=180          كثافة نقاط سطح المكتب
-#    S25_SCALE=2.0        تكبير واجهة كروم / Claude PC
+#    S25_DPI=240          كثافة نقاط سطح المكتب (مبدئياً: محسوبة من عرض الشاشة)
+#    S25_SCALE=2.5        تكبير واجهة كروم / Claude PC (مبدئياً: محسوب)
 #    TU_DEBUG=sysmem      إلزامي على A830 (GMEM يسبب تعليق الـ GPU)
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -29,9 +29,37 @@ export GDK_BACKEND=x11
 export QT_QPA_PLATFORM=xcb
 export LANG="${LANG:-en_US.UTF-8}"
 
-export S25_DPI="${S25_DPI:-180}"
-export S25_SCALE="${S25_SCALE:-2.0}"
+# كثافة النقاط والتكبير: يُحسبان من عرض شاشة X الفعلي بدل رقم ثابت، فيصلح
+# النظام لأي وضع دقة يختاره المستخدم من تطبيق Termux:X11 (native أو scaled).
+# المرجع: كل 480 بكسل عرضاً = ضعف واحد ← 1440 بكسل = ثلاثة أضعاف.
+_s25_w=0
+if command -v xdpyinfo >/dev/null 2>&1; then
+    _s25_w="$(xdpyinfo 2>/dev/null | awk '/dimensions:/ {split($2,a,"x"); print a[1]; exit}')"
+fi
+case "$_s25_w" in ''|*[!0-9]*) _s25_w=0 ;; esac
+
+if [ "$_s25_w" -ge 480 ]; then
+    _s25_dpi=$(( 96 * _s25_w / 480 ))
+    [ "$_s25_dpi" -lt 120 ] && _s25_dpi=120
+    [ "$_s25_dpi" -gt 384 ] && _s25_dpi=384
+    # تكبير البرامج بخطوة نصفية: 1.0 · 1.5 · 2.0 · 2.5 · 3.0
+    _s25_scale="$(( _s25_w * 2 / 480 ))"
+    [ "$_s25_scale" -lt 2 ] && _s25_scale=2
+    [ "$_s25_scale" -gt 8 ] && _s25_scale=8
+    case "$_s25_scale" in
+        2) _s25_scale=1.0 ;; 3) _s25_scale=1.5 ;; 4) _s25_scale=2.0 ;;
+        5) _s25_scale=2.5 ;; 6) _s25_scale=3.0 ;; 7) _s25_scale=3.5 ;;
+        *) _s25_scale=4.0 ;;
+    esac
+else
+    _s25_dpi=240
+    _s25_scale=2.5
+fi
+
+export S25_DPI="${S25_DPI:-$_s25_dpi}"
+export S25_SCALE="${S25_SCALE:-$_s25_scale}"
 export S25_GPU="${S25_GPU:-auto}"
+unset _s25_w _s25_dpi _s25_scale
 
 # ── اكتشاف تعريف Turnip المبني لـ glibc ────────────────────────────────
 _s25_icd=''
