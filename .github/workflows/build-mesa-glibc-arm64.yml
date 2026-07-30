@@ -24,9 +24,14 @@ on:
         description: 'صورة البناء (تحدد أقدم glibc مدعوم)'
         required: false
         default: 'debian:bookworm'
+      make_release:
+        description: 'نشر الحزمة كـ Release (رابط تحميل مباشر للجوال)'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -63,10 +68,58 @@ jobs:
           tar -tzf artifacts/mesa-a830-glibc-arm64.tar.gz | head -20
           echo "glibc: $(ldd --version | head -1)"
 
-      - name: رفع الحزمة
+      - name: رفع الحزمة كـ artifact
         uses: actions/upload-artifact@v4
         with:
           name: mesa-a830-glibc-arm64
           path: artifacts/mesa-a830-glibc-arm64.tar.gz
           retention-days: 30
           compression-level: 0
+
+      - name: نشر Release (رابط تحميل مباشر)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.make_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          apt-get install -y -qq gh 2>/dev/null || {
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+              | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+              > /etc/apt/sources.list.d/github-cli.list
+            apt-get update -qq && apt-get install -y -qq gh
+          }
+          TAG="mesa-a830-$(date +%Y%m%d)-r${{ github.run_number }}"
+          SHA="$(sha256sum artifacts/mesa-a830-glibc-arm64.tar.gz | cut -d' ' -f1)"
+          NOTES=$(mktemp)
+          {
+            echo "# Mesa (Turnip/KGSL + Zink) لحاويات proot — Adreno 830"
+            echo ""
+            echo "حزمة جاهزة تُغنيك عن بناء Mesa على الجوال (٤٠ دقيقة – ساعتان)."
+            echo "مبنية لـ glibc/aarch64 داخل \`${{ github.event.inputs.base_image || 'debian:bookworm' }}\`"
+            echo "فتعمل على bookworm و trixie."
+            echo ""
+            echo "## التثبيت (دقيقتان)"
+            echo '```bash'
+            echo "# داخل Termux — يثبّت الحزمة في /opt/s25/mesa"
+            echo "proot-distro login debian -- bash /opt/s25/src/build-mesa-turnip.sh \\"
+            echo "  --from-tarball https://github.com/${{ github.repository }}/releases/download/$TAG/mesa-a830-glibc-arm64.tar.gz"
+            echo '```'
+            echo ""
+            echo "أو عند التثبيت من الصفر:"
+            echo '```bash'
+            echo "bash s25-desktop/install.sh --mesa-tarball <الرابط أعلاه>"
+            echo '```'
+            echo ""
+            echo "## التحقق"
+            echo '```'
+            echo "sha256  $SHA"
+            echo '```'
+            echo ""
+            echo "> يجب أن يبقى \`TU_DEBUG=sysmem\` مضبوطاً (يضبطه النظام تلقائياً) —"
+            echo "> GMEM يسبب تعليق الـ GPU على A830."
+          } > "$NOTES"
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Mesa Turnip/Zink لـ A830 — $(date +%Y-%m-%d) (build #${{ github.run_number }})" \
+            --notes-file "$NOTES" \
+            artifacts/mesa-a830-glibc-arm64.tar.gz
