@@ -21,6 +21,7 @@ pass "المعمارية" "$(uname -m)"
 pass "النواة" "$(uname -r)"
 pass "الذاكرة" "$(awk '/^MemTotal:/ {printf "%.1f GB", $2/1048576}' /proc/meminfo 2>/dev/null)"
 pass "المعالجات" "$(nproc 2>/dev/null)"
+pass "نسخة النظام" "$(cat /opt/s25/etc/version 2>/dev/null || echo 'غير معروفة — شغّل s25-update')"
 
 head2 "الرسوميات (Turnip / A830)"
 if [ -e /dev/kgsl-3d0 ]; then

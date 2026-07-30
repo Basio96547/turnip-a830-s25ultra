@@ -113,6 +113,11 @@ cp -r "$S25_DIR/container/." "$PAYLOAD/"
 mkdir -p "$PAYLOAD/lib"
 cp "$S25_DIR/lib/common.sh" "$PAYLOAD/lib/common.sh"
 
+# بصمة النسخة: تُطبع في كل جلسة، فيرى المستخدم فوراً إن كانت الأدوات قديمة
+# بدل أن يشغّل سكربتاً قديماً ويظن أن الإصلاح لم ينفع.
+git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null > "$PAYLOAD/.version" \
+    || printf 'unknown\n' > "$PAYLOAD/.version"
+
 # باتشات Mesa وسكربتات بايثون من جذر المستودع (نفس تلك المستخدمة في بناء Android)
 mkdir -p "$PAYLOAD/mesa-patches"
 cp "$REPO_ROOT/patches-a830/"*.patch "$PAYLOAD/mesa-patches/" 2>/dev/null || \
@@ -175,9 +180,11 @@ S25_DISTRO=$DISTRO
 S25_REPO=$REPO_ROOT
 S25_ROOTFS=$ROOTFS
 S25_BIND_SDCARD=$BIND_SDCARD
+# القيم أدناه تُحسب تلقائياً من عرض شاشة X — أزل التعليق لتثبيتها يدوياً
 # S25_GPU=auto        # auto | off  (off = رسوميات بالمعالج)
-# S25_DPI=140         # كثافة النقاط داخل سطح المكتب
-# S25_SCALE=1.4       # تكبير واجهة البرامج
+# S25_DPI=288         # كثافة النقاط داخل سطح المكتب
+# S25_SCALE=3.0       # تكبير واجهة كروم / Claude
+# S25_WIN_DPI=288     # كثافة نقاط نوافذ ويندوز (384 = أكبر)
 # TU_DEBUG=sysmem     # مطلوب لـ A830 (GMEM يسبب تعليق الـ GPU)
 EOF
     ok "s25-desktop · s25-stop · s25-update جاهزة"

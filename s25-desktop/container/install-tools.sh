@@ -32,6 +32,9 @@ for f in "$SRC_DIR/bin/"*; do
     install -m755 "$f" "/opt/s25/bin/$(basename "$f")"
 done
 install -m644 "$SRC_DIR/etc/env.sh" /opt/s25/etc/env.sh
+if [ -r "$SRC_DIR/.version" ]; then
+    install -m644 "$SRC_DIR/.version" /opt/s25/etc/version
+fi
 install -m644 "$SRC_DIR/etc/profile.d-s25.sh" /etc/profile.d/10-s25-desktop.sh
 if [ -f "$SRC_DIR/share/claude-pc.svg" ]; then
     install -Dm644 "$SRC_DIR/share/claude-pc.svg" \

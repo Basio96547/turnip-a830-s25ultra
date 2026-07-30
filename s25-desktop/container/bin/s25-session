@@ -21,7 +21,9 @@ if [ "$MODE" != "shell" ]; then
     xsetroot -solid '#1b1b1f' 2>/dev/null || true
 fi
 
-printf '▶ الجلسة: %s | الرسوميات: %s | DPI: %s\n' "$MODE" "$S25_GPU_ACTIVE" "$S25_DPI"
+S25_VERSION="$(cat /opt/s25/etc/version 2>/dev/null || echo '?')"
+printf '▶ الجلسة: %s | الرسوميات: %s | DPI: %s | النسخة: %s\n' \
+    "$MODE" "$S25_GPU_ACTIVE" "$S25_DPI" "$S25_VERSION"
 if [ "$S25_GPU_ACTIVE" = "software" ] && [ "${S25_GPU:-auto}" != "off" ]; then
     printf '⚠ Turnip غير مُحمّل — الرسوميات على المعالج. شغّل s25-doctor للتفاصيل.\n' >&2
 fi
