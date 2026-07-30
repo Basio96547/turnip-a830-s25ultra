@@ -171,19 +171,49 @@ step "5/6 إنشاء بيئة ويندوز (wineprefix)"
 install -d -o "$S25_USER" -g "$S25_USER" "$WIN_ROOT" "$WINEPREFIX_DIR" "$DL_DIR"
 chown -R "$S25_USER:$S25_USER" "$WIN_ROOT"
 
-if [ -d "$WINEPREFIX_DIR/drive_c" ] && [ "$PREFIX_ONLY" = 0 ]; then
-    ok "بيئة ويندوز موجودة مسبقاً (استخدم --prefix-only لإعادة إنشائها)"
+# بيئة ويندوز سليمة تحتوي ~580 مكتبة في system32. الاعتماد على وجود المجلد
+# وحده كان خطأً: بيئة من wineboot منقطع تبدو «موجودة» لكن Wine يفشل بـ
+#   wine: could not load kernel32.dll, status c0000135
+prefix_dll_count() {
+    find "$WINEPREFIX_DIR/drive_c/windows/system32" -maxdepth 1 -name '*.dll' 2>/dev/null | wc -l
+}
+
+WINE_MARK="$WINEPREFIX_DIR/.s25-wine-build"
+WINE_TAG="$(basename "${WINE_TAR:-${WINE_URL:-wine}}")"
+
+need_boot=0
+boot_reason=""
+if [ "$PREFIX_ONLY" = 1 ]; then
+    need_boot=1; boot_reason="طلب إعادة الإنشاء"
+elif [ ! -d "$WINEPREFIX_DIR/drive_c" ]; then
+    need_boot=1; boot_reason="غير موجودة"
+elif [ "$(prefix_dll_count)" -lt 400 ]; then
+    need_boot=1; boot_reason="ناقصة ($(prefix_dll_count) مكتبة فقط — wineboot سابق لم يكتمل)"
+elif [ "$(cat "$WINE_MARK" 2>/dev/null)" != "$WINE_TAG" ]; then
+    need_boot=1; boot_reason="بُنيت بنسخة Wine مختلفة"
+fi
+
+if [ "$need_boot" = 0 ]; then
+    ok "بيئة ويندوز سليمة ($(prefix_dll_count) مكتبة)"
 else
-    [ "$PREFIX_ONLY" = 1 ] && rm -rf "$WINEPREFIX_DIR"
+    log "إعادة إنشاء بيئة ويندوز — السبب: $boot_reason"
+    rm -rf "$WINEPREFIX_DIR"
     install -d -o "$S25_USER" -g "$S25_USER" "$WINEPREFIX_DIR"
     log "تهيئة أولية (wineboot) — 10 إلى 30 دقيقة على الجوال. لا تقطعها."
-    if su - "$S25_USER" -c "cd /tmp && . /opt/s25/etc/env.sh && . /opt/s25/etc/windows.sh && \
-        DISPLAY= box64 \"\$S25_WINE\" wineboot -u" >/tmp/wineboot.log 2>&1; then
-        ok "تم إنشاء بيئة ويندوز في $WINEPREFIX_DIR"
+    su - "$S25_USER" -c "cd /tmp && . /opt/s25/etc/env.sh && . /opt/s25/etc/windows.sh && \
+        DISPLAY= box64 \"\$S25_WINE\" wineboot -u" >/tmp/wineboot.log 2>&1 || \
+        warn "wineboot أبلغ عن حالة خطأ — نتحقق من النتيجة"
+
+    DLLS="$(prefix_dll_count)"
+    if [ "$DLLS" -ge 400 ]; then
+        printf '%s' "$WINE_TAG" > "$WINE_MARK"
+        chown "$S25_USER:$S25_USER" "$WINE_MARK" 2>/dev/null || true
+        ok "بيئة ويندوز جاهزة ($DLLS مكتبة)"
     else
-        warn "wineboot أبلغ عن أخطاء — آخر الأسطر:"
-        tail -12 /tmp/wineboot.log | sed 's/^/    /'
-        warn "قد تبقى البيئة صالحة؛ تابع واختبر بـ win-run winecfg"
+        warn "البيئة ما زالت ناقصة ($DLLS مكتبة) — آخر أسطر wineboot:"
+        tail -15 /tmp/wineboot.log | sed 's/^/    /'
+        warn "الأسباب المحتملة: مكتبات x86_64 ناقصة، أو انقطاع wineboot، أو ذاكرة غير كافية"
+        warn "أعد المحاولة بـ: sudo bash /opt/s25/src/install-windows-layer.sh --prefix-only"
     fi
 fi
 
