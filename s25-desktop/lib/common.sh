@@ -69,10 +69,53 @@ APTEOF
     ok "ضُبطت إعدادات apt الملائمة لـ proot"
 }
 
+# apt_fix_conflicting_sources — إصلاح تعارض مفاتيح مصادر apt
+#
+# نسخة قديمة من هذا المشروع كانت تضيف مصدر amd64 منفصلاً بملف مفاتيح ‎.gpg‎
+# بينما تستخدم trixie ‎.pgp‎، فينتج خطأ يعطّل قراءة كل المصادر:
+#   E: Conflicting values set for option Signed-By …
+#   E: The list of sources could not be read.
+# الدالة تصلح الحالة العالقة: تحذف ذلك المصدر وتلغي تقييد المصادر بـ arm64
+# (المعمارية المضافة عبر dpkg تكفي لجلب فهارس amd64 من نفس المصدر).
+apt_fix_conflicting_sources() {
+    local f fixed=0
+    if [ -f /etc/apt/sources.list.d/amd64.sources ]; then
+        rm -f /etc/apt/sources.list.d/amd64.sources
+        fixed=1
+    fi
+    for f in /etc/apt/sources.list.d/*.sources; do
+        [ -r "$f" ] || continue
+        if grep -qE '^Architectures:[[:space:]]*arm64[[:space:]]*$' "$f"; then
+            sed -i -E '/^Architectures:[[:space:]]*arm64[[:space:]]*$/d' "$f"
+            fixed=1
+        fi
+    done
+    if [ -f /etc/apt/sources.list ] && grep -q '^deb \[arch=arm64\] ' /etc/apt/sources.list; then
+        sed -i 's/^deb \[arch=arm64\] /deb /' /etc/apt/sources.list
+        fixed=1
+    fi
+    [ "$fixed" = 1 ] && ok "أُصلح تعارض مصادر apt" || true
+}
+
+# apt_update_once — محاولة تحديث واحدة مع إصلاح ذاتي للأخطاء المعروفة
+apt_update_once() {
+    local out
+    if out="$(apt-get update -qq 2>&1)"; then
+        return 0
+    fi
+    printf '%s\n' "$out" | tail -3 | sed 's/^/    /' >&2
+    case "$out" in
+        *"Conflicting values set for option Signed-By"*|*"list of sources could not be read"*)
+            apt_fix_conflicting_sources
+            ;;
+    esac
+    return 1
+}
+
 apt_refresh() {
     export DEBIAN_FRONTEND=noninteractive
     apt_proot_config
-    retry 4 apt-get update -qq
+    retry 4 apt_update_once
 }
 
 apt_available() {

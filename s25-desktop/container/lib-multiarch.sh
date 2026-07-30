@@ -45,24 +45,8 @@ enable_amd64_multiarch() {
         ok "أُضيفت معمارية amd64"
     fi
 
-    # تنظيف آثار الطريقة القديمة (مصدر amd64 منفصل بمفتاح مختلف)
-    if [ -f /etc/apt/sources.list.d/amd64.sources ]; then
-        rm -f /etc/apt/sources.list.d/amd64.sources
-        log "أُزيل مصدر amd64 المنفصل — كان يتعارض مع مفاتيح التوزيعة"
-    fi
-
-    # وإلغاء أي تقييد للمصادر بـ arm64 وحدها، حتى تُجلب فهارس amd64 من نفس المصدر
-    local f
-    for f in /etc/apt/sources.list.d/*.sources; do
-        [ -r "$f" ] || continue
-        if grep -qE '^Architectures:[[:space:]]*arm64[[:space:]]*$' "$f"; then
-            sed -i -E '/^Architectures:[[:space:]]*arm64[[:space:]]*$/d' "$f"
-            log "أُلغي تقييد $(basename "$f") بـ arm64"
-        fi
-    done
-    if [ -f /etc/apt/sources.list ]; then
-        sed -i 's/^deb \[arch=arm64\] /deb /' /etc/apt/sources.list
-    fi
+    # إصلاح أي أثر لطريقة قديمة كانت تضيف مصدر amd64 منفصلاً بمفتاح مختلف
+    apt_fix_conflicting_sources
 
     apt_refresh
 }
