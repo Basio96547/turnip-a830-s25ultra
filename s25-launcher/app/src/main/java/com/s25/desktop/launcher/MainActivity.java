@@ -7,6 +7,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -44,6 +45,17 @@ public class MainActivity extends Activity {
     private static final String ENABLE_CMD =
             "echo 'allow-external-apps=true' >> ~/.termux/termux.properties && termux-reload-settings";
 
+    private static final String REPO_URL = "https://github.com/basio96547/turnip-a830-s25ultra";
+
+    /** أمر التثبيت الكامل: يستنسخ المستودع إن لزم ثم يشغّل المُثبّت. */
+    private static final String INSTALL_CMD =
+            "cd \"$HOME\" && pkg install -y git && "
+            + "{ [ -d turnip-a830-s25ultra ] || git clone " + REPO_URL + "; } && "
+            + "bash turnip-a830-s25ultra/s25-desktop/install.sh";
+
+    private static final String PREFS = "s25";
+    private static final String KEY_INSTALL_STARTED = "install_started";
+
     private static final String TERMUX_DOWNLOAD = "https://f-droid.org/packages/com.termux/";
     private static final String X11_DOWNLOAD = "https://github.com/termux/termux-x11/releases";
 
@@ -56,6 +68,9 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         status = findViewById(R.id.status);
 
+        bind(R.id.btn_install, new Runnable() {
+            @Override public void run() { startInstall(); }
+        });
         bind(R.id.btn_win_claude, new Runnable() {
             @Override public void run() { launchMode("win-claude"); }
         });
@@ -144,7 +159,19 @@ public class MainActivity extends Activity {
             return;
         }
 
-        boolean started = runInTermux(TERMUX_BIN + "s25-desktop", new String[]{mode}, false, false);
+        // لم يُثبّت النظام بعد؟ لا نرسله إلى شاشة عرض فارغة
+        if (!prefs().getBoolean(KEY_INSTALL_STARTED, false)) {
+            showNotInstalledDialog(mode);
+            return;
+        }
+
+        // الغلاف يشرح السبب داخل Termux لو كان الأمر غير موجود، بدل الصمت
+        String script =
+                "if command -v s25-desktop >/dev/null 2>&1; then exec s25-desktop " + mode + "; fi; "
+                + "printf '\\n\\033[0;31m*** النظام غير مثبت ***\\033[0m\\n'; "
+                + "printf 'نفّذ:\\n  bash turnip-a830-s25ultra/s25-desktop/install.sh\\n\\n'; "
+                + "exec bash";
+        boolean started = runInTermux(TERMUX_BIN + "bash", new String[]{"-lc", script}, false, false);
         if (!started) return;
 
         String text = getString(R.string.starting, label(mode));
@@ -169,6 +196,38 @@ public class MainActivity extends Activity {
             case "win-chrome": return getString(R.string.mode_win_chrome);
             default:           return getString(R.string.mode_desktop);
         }
+    }
+
+    private SharedPreferences prefs() {
+        return getSharedPreferences(PREFS, MODE_PRIVATE);
+    }
+
+    /** تشغيل التثبيت الكامل في جلسة Termux مرئية ليتابع المستخدم التقدّم. */
+    private void startInstall() {
+        if (!isInstalled(TERMUX_PKG)) {
+            showInstallDialog(R.string.need_termux, TERMUX_DOWNLOAD);
+            return;
+        }
+        if (runInTermux(TERMUX_BIN + "bash", new String[]{"-lc", INSTALL_CMD}, false, true)) {
+            prefs().edit().putBoolean(KEY_INSTALL_STARTED, true).apply();
+            status.setText(R.string.installing);
+        }
+    }
+
+    private void showNotInstalledDialog(final String mode) {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.not_installed_title)
+                .setMessage(R.string.not_installed_body)
+                .setPositiveButton(R.string.install_now, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { startInstall(); }
+                })
+                .setNegativeButton(R.string.run_anyway, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        prefs().edit().putBoolean(KEY_INSTALL_STARTED, true).apply();
+                        launchMode(mode);
+                    }
+                })
+                .show();
     }
 
     private void runDoctor() {
