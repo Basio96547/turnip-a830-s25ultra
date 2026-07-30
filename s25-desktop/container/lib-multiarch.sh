@@ -28,6 +28,15 @@ install_box64() {
 }
 
 # enable_amd64_multiarch — إضافة معمارية amd64 إلى apt
+#
+# الطريقة الصحيحة هي الأبسط: نضيف المعمارية فقط ولا نلمس مصادر التوزيعة.
+# عندما لا يحدد المصدر حقل Architectures، يجلب apt فهارس كل المعماريات
+# المُضافة عبر dpkg — فلا حاجة لمصدر منفصل.
+#
+# المصدر المنفصل كان يسبب فشلاً حقيقياً على trixie:
+#   E: Conflicting values set for option Signed-By … debian-archive-keyring.gpg
+#      != … debian-archive-keyring.pgp
+# لأن اسم ملف المفاتيح تغيّر بين الإصدارات. لذلك نزيل أي أثر لتلك الطريقة.
 enable_amd64_multiarch() {
     if dpkg --print-foreign-architectures 2>/dev/null | grep -qx amd64; then
         ok "معمارية amd64 مضافة مسبقاً"
@@ -36,29 +45,25 @@ enable_amd64_multiarch() {
         ok "أُضيفت معمارية amd64"
     fi
 
-    local codename
-    codename="$( (. /etc/os-release && echo "${VERSION_CODENAME:-}") 2>/dev/null || true)"
-    codename="${codename:-trixie}"
-
-    # نحصر المستودعات الأصلية على arm64 حتى لا يحاول apt جلب كل شيء لـ amd64
-    if [ -f /etc/apt/sources.list.d/debian.sources ]; then
-        grep -q '^Architectures:' /etc/apt/sources.list.d/debian.sources || \
-            sed -i 's/^Components:/Architectures: arm64\nComponents:/' /etc/apt/sources.list.d/debian.sources
-    fi
-    if [ -f /etc/apt/sources.list ] && grep -q '^deb http' /etc/apt/sources.list; then
-        sed -i 's|^deb \(http\)|deb [arch=arm64] \1|' /etc/apt/sources.list
+    # تنظيف آثار الطريقة القديمة (مصدر amd64 منفصل بمفتاح مختلف)
+    if [ -f /etc/apt/sources.list.d/amd64.sources ]; then
+        rm -f /etc/apt/sources.list.d/amd64.sources
+        log "أُزيل مصدر amd64 المنفصل — كان يتعارض مع مفاتيح التوزيعة"
     fi
 
-    if [ ! -f /etc/apt/sources.list.d/amd64.sources ]; then
-        cat > /etc/apt/sources.list.d/amd64.sources <<EOF
-Types: deb
-URIs: http://deb.debian.org/debian
-Suites: $codename
-Components: main
-Architectures: amd64
-Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-EOF
+    # وإلغاء أي تقييد للمصادر بـ arm64 وحدها، حتى تُجلب فهارس amd64 من نفس المصدر
+    local f
+    for f in /etc/apt/sources.list.d/*.sources; do
+        [ -r "$f" ] || continue
+        if grep -qE '^Architectures:[[:space:]]*arm64[[:space:]]*$' "$f"; then
+            sed -i -E '/^Architectures:[[:space:]]*arm64[[:space:]]*$/d' "$f"
+            log "أُلغي تقييد $(basename "$f") بـ arm64"
+        fi
+    done
+    if [ -f /etc/apt/sources.list ]; then
+        sed -i 's/^deb \[arch=arm64\] /deb /' /etc/apt/sources.list
     fi
+
     apt_refresh
 }
 

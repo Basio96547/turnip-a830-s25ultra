@@ -238,6 +238,7 @@ Winlator تطبيق أندرويد يجمع نفس المكوّنات (Wine + Bo
 | ما تراه | السبب / الحل |
 |---------|--------------|
 | `box64 غير مثبت` | `sudo bash /opt/s25/src/install-windows-layer.sh` |
+| `E: Conflicting values set for option Signed-By` | أثر مصدر amd64 منفصل من نسخة قديمة من السكربت — النسخة الحالية تزيله تلقائياً؛ يدوياً: `sudo rm -f /etc/apt/sources.list.d/amd64.sources` |
 | `wine: cannot find L"C:\\windows\\system32\\..."` | بيئة ويندوز ناقصة → `--prefix-only` |
 | نافذة سوداء أو بلا رسم | `S25_GPU=off` للتشخيص، ثم جرّب `--no-dxvk` |
 | `err:module:import_dll` | مكتبة ويندوز ناقصة — غالباً يحتاج البرنامج مكوّنات إضافية (Visual C++ Runtime) |
