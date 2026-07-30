@@ -30,6 +30,31 @@
 **ليست محاكاة ويندوز كاملة**: Wine يترجم نداءات ويندوز إلى نداءات لينكس، فلا
 يوجد نظام ويندوز داخل الجوال ولا حاجة لترخيص. هذا نفس مبدأ عمل Winlator.
 
+### لماذا نثبّت نسخة Wine محددة لا الأحدث؟
+
+box64 يحتوي كود توافق خاص بـ Wine. بناء Wine أحدث بكثير من نسخة box64 المثبّتة
+يفشل بهذه الصورة بالضبط:
+
+```
+[BOX64] Warning, Symbol wine_main_preload_info not found
+wine: could not load kernel32.dll, status c0000135
+```
+
+حدث هذا فعلياً مع box64 v0.3.4 و Wine 11.14. لذلك الافتراضي الآن **بناء مثبّت**
+(‎wine-10.0-staging-amd64-wow64‎)، وإن فشلت تهيئة البيئة يجرّب السكربت بدائل
+تلقائياً. لتحديد بناء بنفسك:
+
+```bash
+sudo bash /opt/s25/src/install-windows-layer.sh \
+  --wine-url https://github.com/Kron4ek/Wine-Builds/releases/download/10.0/wine-10.0-amd64-wow64.tar.xz
+```
+
+ولترقية box64 نفسه (يسمح ببناءات Wine أحدث):
+
+```bash
+sudo apt-get update && sudo apt-get install --only-upgrade box64
+```
+
 ### لماذا بناء `amd64-wow64` تحديداً؟
 
 هذه أهم نقطة تقنية في الطبقة كلها، وقد تحققنا منها عملياً:

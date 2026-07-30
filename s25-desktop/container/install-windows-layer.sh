@@ -56,7 +56,14 @@ S25_USER="${S25_USER:-s25}"
 #   • wine-*-amd64-wow64.tar.xz  → bin/wine ملف ELF 64-بت ولا يوجد wine64،
 #                                  فبرامج 32-بت تعمل عبر مُحمّل 64-بت → box64 يكفي
 # وهذا مهم عملياً: مُثبّت Claude لويندوز (Claude-Setup-x64.exe) ملف 32-بت.
-WINE_FALLBACK_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/10.13/wine-10.13-staging-amd64-wow64.tar.xz"
+# ⚠ لا نأخذ «أحدث» بناء: box64 يحتوي كود توافق خاص بـ Wine، وبناء Wine أحدث
+# بكثير من box64 المثبّت يفشل بـ:
+#   [BOX64] Warning, Symbol wine_main_preload_info not found
+#   wine: could not load kernel32.dll, status c0000135
+# لذلك نثبّت نسخة معروفة التوافق، ونجرّب البدائل تلقائياً إن فشلت البيئة.
+WINE_URL_DEFAULT="https://github.com/Kron4ek/Wine-Builds/releases/download/10.0/wine-10.0-staging-amd64-wow64.tar.xz"
+WINE_URL_ALT1="https://github.com/Kron4ek/Wine-Builds/releases/download/10.0/wine-10.0-amd64-wow64.tar.xz"
+WINE_URL_ALT2="https://github.com/Kron4ek/Wine-Builds/releases/download/10.13/wine-10.13-staging-amd64-wow64.tar.xz"
 DXVK_FALLBACK_URL="https://github.com/doitsujin/dxvk/releases/download/v2.5.3/dxvk-2.5.3.tar.gz"
 
 while [ $# -gt 0 ]; do
@@ -91,36 +98,40 @@ if [ "$PREFIX_ONLY" = 0 ]; then
     enable_amd64_multiarch
     install_amd64_runtime_libs
     ok "مكتبات amd64 جاهزة"
+fi
 
-    step "3/6 تنزيل Wine (بناء amd64-wow64)"
+# install_wine_build <url> — ينزّل بناء Wine ويفكّه في $WINE_DIR
+install_wine_build() {
+    local url="$1" tar
     mkdir -p "$DL_DIR"
-    if [ -z "$WINE_URL" ]; then
-        WINE_URL="$(latest_asset Kron4ek/Wine-Builds 'staging\-amd64\-wow64\.tar\.xz' || true)"
-        [ -n "$WINE_URL" ] || WINE_URL="$(latest_asset Kron4ek/Wine-Builds '\-amd64\-wow64\.tar\.xz' || true)"
-        [ -n "$WINE_URL" ] || WINE_URL="$WINE_FALLBACK_URL"
-    fi
-    log "المصدر: $WINE_URL"
-    apt_install xz-utils tar curl file
-    WINE_TAR="$DL_DIR/$(basename "$WINE_URL")"
-    if [ ! -s "$WINE_TAR" ]; then
-        retry 4 curl -fL "$WINE_URL" -o "$WINE_TAR" || die "فشل تنزيل Wine"
+    tar="$DL_DIR/$(basename "$url")"
+    log "المصدر: $url"
+    if [ ! -s "$tar" ]; then
+        retry 4 curl -fL "$url" -o "$tar" || { warn "فشل تنزيل $url"; return 1; }
     fi
     rm -rf "$WINE_DIR"
     mkdir -p "$WINE_DIR"
-    tar -xf "$WINE_TAR" -C "$WINE_DIR" --strip-components=1
-    [ -x "$WINE_DIR/bin/wine" ] || [ -x "$WINE_DIR/bin/wine64" ] \
-        || die "بناء Wine لا يحتوي bin/wine"
+    tar -xf "$tar" -C "$WINE_DIR" --strip-components=1 || { warn "فشل فك $tar"; return 1; }
+    [ -x "$WINE_DIR/bin/wine" ] || [ -x "$WINE_DIR/bin/wine64" ] || {
+        warn "بناء Wine لا يحتوي bin/wine"; return 1; }
 
-    # التحقق من نوع WoW64: مُحمّل 32-بت يعني أننا نحتاج box86 وهو غير مدعوم هنا
+    # مُحمّل 32-بت يعني WoW64 القديم — يحتاج box86 غير المدعوم هنا
     if file -L "$WINE_DIR/bin/wine" 2>/dev/null | grep -q 'ELF 32-bit'; then
-        warn "هذا بناء WoW64 القديم (bin/wine ملف 32-بت)."
-        warn "برامج ويندوز 32-بت — ومنها مُثبّت Claude — تحتاج box86 ولن تعمل."
-        warn "استخدم بناء amd64-wow64:"
-        warn "  --wine-url $WINE_FALLBACK_URL"
+        warn "بناء WoW64 قديم (bin/wine ملف 32-بت) — برامج 32-بت لن تعمل بلا box86"
     else
         ok "بناء WoW64 الجديد ✓ (برامج 32-بت تعمل عبر box64 وحده)"
     fi
+    WINE_TAR="$tar"
+    printf '%s' "$(basename "$tar")" > "$WIN_ROOT/.s25-wine-tag"
     ok "Wine في $WINE_DIR ($(du -sh "$WINE_DIR" | cut -f1))"
+    return 0
+}
+
+if [ "$PREFIX_ONLY" = 0 ] || [ -n "$WINE_URL" ]; then
+    step "3/6 تنزيل Wine (بناء amd64-wow64)"
+    apt_install xz-utils tar curl file
+    [ -n "$WINE_URL" ] || WINE_URL="$WINE_URL_DEFAULT"
+    install_wine_build "$WINE_URL" || die "فشل تجهيز Wine"
 fi
 
 # ── ملف بيئة طبقة ويندوز ───────────────────────────────────────────────
@@ -133,7 +144,7 @@ S25_WIN_ROOT=/opt/s25/windows
 export WINEPREFIX="${WINEPREFIX:-$S25_WIN_ROOT/prefix}"
 export WINEARCH="${WINEARCH:-win64}"
 export WINEDEBUG="${WINEDEBUG:--all}"
-export WINEDLLPATH="$S25_WIN_ROOT/wine/lib/wine"
+# لا نضبط WINEDLLPATH: Wine الحديث يجد مكتباته من مسار مُحمّله
 
 # بناء amd64-wow64 لا يحتوي wine64 إطلاقاً، و bin/wine فيه 64-بت — وهو المطلوب
 if [ -x "$S25_WIN_ROOT/wine/bin/wine" ]; then
@@ -197,23 +208,52 @@ if [ "$need_boot" = 0 ]; then
     ok "بيئة ويندوز سليمة ($(prefix_dll_count) مكتبة)"
 else
     log "إعادة إنشاء بيئة ويندوز — السبب: $boot_reason"
-    rm -rf "$WINEPREFIX_DIR"
-    install -d -o "$S25_USER" -g "$S25_USER" "$WINEPREFIX_DIR"
-    log "تهيئة أولية (wineboot) — 10 إلى 30 دقيقة على الجوال. لا تقطعها."
-    su - "$S25_USER" -c "cd /tmp && . /opt/s25/etc/env.sh && . /opt/s25/etc/windows.sh && \
-        DISPLAY= box64 \"\$S25_WINE\" wineboot -u" >/tmp/wineboot.log 2>&1 || \
-        warn "wineboot أبلغ عن حالة خطأ — نتحقق من النتيجة"
+
+    # run_wineboot — ينشئ البيئة من الصفر بالبناء الحالي ويعيد 0 عند النجاح
+    run_wineboot() {
+        rm -rf "$WINEPREFIX_DIR"
+        install -d -o "$S25_USER" -g "$S25_USER" "$WINEPREFIX_DIR"
+        log "تهيئة أولية (wineboot) — 10 إلى 30 دقيقة على الجوال. لا تقطعها."
+        su - "$S25_USER" -c "cd /tmp && . /opt/s25/etc/env.sh && . /opt/s25/etc/windows.sh && \
+            DISPLAY= box64 \"\$S25_WINE\" wineboot -u" >/tmp/wineboot.log 2>&1 || true
+        [ "$(prefix_dll_count)" -ge 400 ]
+    }
+
+    # تعارض نسخ box64/Wine يظهر كبيئة فارغة — نجرّب بناءات بديلة تلقائياً
+    if run_wineboot; then
+        BOOT_OK=1
+    else
+        BOOT_OK=0
+        warn "wineboot لم يُنشئ بيئة صالحة ($(prefix_dll_count) مكتبة) — آخر الأسطر:"
+        tail -8 /tmp/wineboot.log | sed 's/^/    /'
+        if grep -q 'could not load kernel32.dll\|wine_main_preload_info' /tmp/wineboot.log 2>/dev/null; then
+            warn "هذه علامة تعارض بين نسخة box64 ($(box64 --version 2>&1 | grep -oE 'v[0-9.]+' | head -1)) وبناء Wine"
+        fi
+        for alt in "$WINE_URL_DEFAULT" "$WINE_URL_ALT1" "$WINE_URL_ALT2"; do
+            [ "$(basename "$alt")" = "$(basename "${WINE_TAR:-}")" ] && continue
+            step "تجربة بناء Wine بديل: $(basename "$alt")"
+            install_wine_build "$alt" || continue
+            # نعيد قراءة البيئة لأن مسار Wine قد تغيّر
+            # shellcheck source=/dev/null
+            . /opt/s25/etc/windows.sh
+            if run_wineboot; then BOOT_OK=1; break; fi
+            warn "البناء $(basename "$alt") لم ينجح أيضاً"
+        done
+    fi
 
     DLLS="$(prefix_dll_count)"
-    if [ "$DLLS" -ge 400 ]; then
+    if [ "$BOOT_OK" = 1 ]; then
+        WINE_TAG="$(basename "${WINE_TAR:-wine}")"
         printf '%s' "$WINE_TAG" > "$WINE_MARK"
         chown "$S25_USER:$S25_USER" "$WINE_MARK" 2>/dev/null || true
-        ok "بيئة ويندوز جاهزة ($DLLS مكتبة)"
+        ok "بيئة ويندوز جاهزة ($DLLS مكتبة) — البناء: $WINE_TAG"
     else
-        warn "البيئة ما زالت ناقصة ($DLLS مكتبة) — آخر أسطر wineboot:"
-        tail -15 /tmp/wineboot.log | sed 's/^/    /'
-        warn "الأسباب المحتملة: مكتبات x86_64 ناقصة، أو انقطاع wineboot، أو ذاكرة غير كافية"
-        warn "أعد المحاولة بـ: sudo bash /opt/s25/src/install-windows-layer.sh --prefix-only"
+        warn "تعذّر إنشاء بيئة ويندوز بأي بناء ($DLLS مكتبة)"
+        warn "الأسباب بالترتيب:"
+        warn "  • box64 قديم مقابل Wine — حدّثه:  sudo apt-get install --only-upgrade box64"
+        warn "  • مكتبات x86_64 ناقصة — أعد:  sudo bash /opt/s25/src/install-windows-layer.sh"
+        warn "  • جرّب بناءً محدداً:  --wine-url <رابط بناء amd64-wow64>"
+        warn "  السجل الكامل: /tmp/wineboot.log"
     fi
 fi
 
