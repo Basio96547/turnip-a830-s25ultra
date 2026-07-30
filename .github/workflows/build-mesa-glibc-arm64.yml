@@ -77,7 +77,9 @@ jobs:
           compression-level: 0
 
       - name: نشر Release (رابط تحميل مباشر)
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.make_release == 'true'
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.make_release == 'true')
+          || contains(github.event.head_commit.message, '[mesa-release]')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
