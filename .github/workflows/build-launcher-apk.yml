@@ -99,31 +99,40 @@ jobs:
           TAG="launcher-v${{ steps.apk.outputs.version }}-r${{ github.run_number }}"
           NOTES=$(mktemp)
           {
-            echo "# تطبيق S25 Desktop — مُشغّل النظام"
+            echo "# تطبيق S25 Desktop — مُشغّل برامج ويندوز على الجوال"
             echo ""
-            echo "تطبيق أندرويد صغير (~26 كيلوبايت) يضع أيقونة على الشاشة الرئيسية تفتح:"
-            echo "- Claude PC كتطبيق بملء الشاشة"
-            echo "- كروم سطح المكتب"
-            echo "- سطح مكتب XFCE الكامل"
+            echo "تطبيق أندرويد صغير (~32 كيلوبايت) يضع أيقونة على الشاشة الرئيسية،"
+            echo "تشغّل بضغطة واحدة وتنقلك تلقائياً إلى شاشة العرض:"
             echo ""
-            echo "## التثبيت"
-            echo "1. حمّل \`S25-Desktop-launcher.apk\` وثبّته (اسمح بتثبيت من مصادر غير معروفة)"
-            echo "2. ثبّت **Termux** (F-Droid) و **Termux:X11** إن لم تكن مثبتة"
-            echo "3. داخل Termux نفّذ مرة واحدة:"
+            echo "- **Claude Desktop (ويندوز .exe)** — النسخة الرسمية عبر Wine + box64 + DXVK"
+            echo "- **Chrome (ويندوز .exe)** — حزمة Google Chrome الرسمية"
+            echo "- سطح مكتب XFCE الكامل · شاشة العرض · تشخيص النظام · إيقاف الكل"
+            echo ""
+            echo "الضغط الطويل على الأيقونة يعطي اختصارات يمكن سحبها كأيقونات مستقلة."
+            echo ""
+            echo "## المطلوب قبل الاستخدام"
+            echo "1. حمّل \`S25-Desktop-launcher.apk\` وثبّته"
+            echo "   (على سامسونج: أوقف **Auto Blocker** من الإعدادات ▸ الأمان والخصوصية)"
+            echo "2. ثبّت **Termux** (من F-Droid لا Play Store) و **Termux:X11** (APK)"
+            echo "3. داخل Termux مرة واحدة — يثبّت الحاوية وTurnip وطبقة ويندوز:"
             echo '   ```'
             echo '   git clone https://github.com/basio96547/turnip-a830-s25ultra'
             echo '   bash turnip-a830-s25ultra/s25-desktop/install.sh'
             echo '   ```'
             echo "4. افتح التطبيق واضغط الزر الذي تريده"
             echo ""
+            echo "> أول تشغيل لبرنامج ويندوز ينزّل مُثبّته الرسمي داخل بيئة ويندوز — قد يأخذ دقائق."
+            echo ""
+            echo "الدليل: [docs/WINDOWS.md](https://github.com/Basio96547/turnip-a830-s25ultra/blob/main/s25-desktop/docs/WINDOWS.md)"
+            echo ""
             echo "## التحقق من الملف"
             echo '```'
             echo "sha256  ${{ steps.apk.outputs.sha256 }}"
             echo '```'
             echo ""
-            echo "> الحزمة موقّعة بمفتاح debug بمخططَي v2 و v3 (كافٍ للتثبيت اليدوي،"
-            echo "> غير مناسب لمتجر Play). إن كانت لديك نسخة أقدم من هذا التطبيق"
-            echo "> فأزلها قبل التثبيت — تواقيع debug تختلف بين نسخ البناء."
+            echo "> موقّعة بمفتاح debug بمخططَي v2 و v3 (كافٍ للتثبيت اليدوي، غير مناسب"
+            echo "> لمتجر Play). إن كانت لديك نسخة أقدم فأزلها قبل التثبيت — تواقيع debug"
+            echo "> تختلف بين نسخ البناء."
           } > "$NOTES"
 
           gh release create "$TAG" \
