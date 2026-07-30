@@ -65,6 +65,88 @@ EOF
         fi ;;
 esac
 
+# ── إقناع مُثبّت Squirrel بأن .NET Framework موجود ─────────────────────
+# المُثبّت يتحقق من .NET 4.5+ عبر السجل، وإن لم يجده حاول تنزيله وتثبيته —
+# وهذا يفشل على Wine برسالة «Failed to install the .NET Framework».
+# الفحص هو العقبة الوحيدة: Claude Desktop تطبيق Electron ولا يستخدم .NET
+# وقت التشغيل إطلاقاً. فنكتب مفاتيح النسخة 4.8 ونترك المُثبّت يمضي.
+declare_dotnet48() {
+    printf '▶ تسجيل .NET Framework 4.8 في بيئة ويندوز (يتخطى فحص المُثبّت)\n'
+    local k
+    for k in 'HKLM\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full' \
+             'HKLM\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Client'; do
+        box64 "$S25_WINE" reg add "$k" /v Install   /t REG_DWORD /d 1      /f >/dev/null 2>&1 || true
+        box64 "$S25_WINE" reg add "$k" /v Release   /t REG_DWORD /d 528040 /f >/dev/null 2>&1 || true
+        box64 "$S25_WINE" reg add "$k" /v Version   /t REG_SZ    /d '4.8.09032' /f >/dev/null 2>&1 || true
+        box64 "$S25_WINE" reg add "$k" /v TargetVersion /t REG_SZ /d '4.0.0' /f >/dev/null 2>&1 || true
+    done
+}
+
+# ── الاحتياطي: فك التطبيق من المُثبّت مباشرة ───────────────────────────
+# Claude-Setup-x64.exe مُثبّت Squirrel يحمل داخله حزمة .nupkg، وهي أرشيف zip
+# يحتوي التطبيق كاملاً في lib/net45. ففكّه ونسخه إلى مسار Squirrel المعتاد
+# يعطي تثبيتاً عاملاً بلا الحاجة إلى تشغيل المُثبّت أصلاً.
+extract_from_setup() {
+    local tmp pkg nupkg ver dest src
+    # ملاحظة: هذا السكربت لا يُحمّل common.sh، فلا تتوفر الدالة have —
+    # نستخدم command -v مباشرة (خطأ سابق كان يختار الأداة الخطأ دائماً).
+    if ! command -v 7z >/dev/null 2>&1 && ! command -v 7za >/dev/null 2>&1; then
+        printf '▶ تثبيت p7zip لفك المُثبّت…\n'
+        sudo apt-get install -y -qq p7zip-full >/dev/null 2>&1 \
+            || sudo apt-get install -y -qq p7zip >/dev/null 2>&1 \
+            || { printf '✗ تعذر تثبيت p7zip — ثبّته يدوياً: sudo apt install p7zip-full\n' >&2; return 1; }
+    fi
+    local Z=7za
+    command -v 7z >/dev/null 2>&1 && Z=7z
+
+    tmp="$(mktemp -d)"
+    # shellcheck disable=SC2064
+    trap "rm -rf '$tmp'" RETURN
+
+    printf '▶ فك المُثبّت لاستخراج حزمة التطبيق…\n'
+    "$Z" x -y -o"$tmp/setup" "$SETUP" >/dev/null 2>&1 || true
+    nupkg="$(find "$tmp/setup" -iname '*.nupkg' -type f 2>/dev/null | sort | sed -n 1p)"
+    [ -n "$nupkg" ] || { printf '✗ لم توجد حزمة .nupkg داخل المُثبّت\n' >&2; return 1; }
+
+    ver="$(basename "$nupkg" | sed -n 's/.*[Cc]laude-\([0-9][0-9.]*\)-.*/\1/p')"
+    ver="${ver:-0.0.0}"
+    printf '  الحزمة: %s (النسخة %s)\n' "$(basename "$nupkg")" "$ver"
+
+    pkg="$tmp/pkg"
+    "$Z" x -y -o"$pkg" "$nupkg" >/dev/null 2>&1 \
+        || { printf '✗ فشل فك حزمة .nupkg\n' >&2; return 1; }
+
+    src="$(find "$pkg" -maxdepth 3 -type d -iname 'net45' 2>/dev/null | sed -n 1p)"
+    [ -n "$src" ] || src="$(dirname "$(find "$pkg" -type f -iname 'claude.exe' 2>/dev/null | sed -n 1p)")"
+    [ -d "$src" ] && [ -f "$src/claude.exe" ] \
+        || { printf '✗ لم يُعثر على claude.exe داخل الحزمة\n' >&2; return 1; }
+
+    local win_user root d
+    win_user=""
+    for d in "$WINEPREFIX/drive_c/users"/*; do
+        [ -d "$d" ] || continue
+        case "$(basename "$d")" in Public) continue ;; esac
+        win_user="$(basename "$d")"; break
+    done
+    win_user="${win_user:-$(id -un)}"
+    root="$WINEPREFIX/drive_c/users/$win_user/AppData/Local/AnthropicClaude"
+    dest="$root/app-$ver"
+
+    printf '▶ تثبيت التطبيق في %s\n' "$dest"
+    rm -rf "$dest"
+    mkdir -p "$dest"
+    cp -a "$src/." "$dest/" || { printf '✗ فشل النسخ\n' >&2; return 1; }
+
+    # Squirrel يضع Squirrel.exe باسم Update.exe في المجلد الأب لتحديثات التطبيق
+    if [ -f "$dest/Squirrel.exe" ]; then
+        cp -a "$dest/Squirrel.exe" "$root/Update.exe" 2>/dev/null || true
+    fi
+    printf '%s' "$ver" > "$root/.s25-version" 2>/dev/null || true
+    return 0
+}
+
+declare_dotnet48
+
 printf '▶ تشغيل المُثبّت داخل بيئة ويندوز (قد يأخذ دقائق على الجوال)…\n'
 win-run "$SETUP" || printf '⚠ المُثبّت انتهى بحالة خطأ — سنتحقق إن كان التثبيت نجح\n' >&2
 
@@ -74,6 +156,14 @@ for _ in $(seq 1 30); do
     [ -n "$CLAUDE_EXE" ] && break
     sleep 2
 done
+
+# فشل المُثبّت؟ نفكّ التطبيق من داخله بأنفسنا
+if [ -z "$CLAUDE_EXE" ]; then
+    printf '⚠ المُثبّت لم يُنتج claude.exe — سنفكّ التطبيق من داخل المُثبّت\n' >&2
+    if extract_from_setup; then
+        CLAUDE_EXE="$(find_claude_exe || true)"
+    fi
+fi
 
 if [ -z "$CLAUDE_EXE" ]; then
     cat >&2 <<'EOF'

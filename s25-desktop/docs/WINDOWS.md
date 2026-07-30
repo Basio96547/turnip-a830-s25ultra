@@ -273,6 +273,34 @@ Winlator تطبيق أندرويد يجمع نفس المكوّنات (Wine + Bo
 | المُثبّت 32-بت لا يبدأ إطلاقاً | بناء Wine خطأ — `s25-doctor` سيقول «WoW64 قديم»؛ أعد التثبيت أو مرّر `--wine-url` لبناء `amd64-wow64` |
 | `s25-doctor` يقول «بيئة ويندوز ناقصة» | `wineboot` انقطع قبل أن يكمل → `--prefix-only` وانتظر حتى ينتهي |
 | نفاد الذاكرة | أغلق التطبيقات الأخرى؛ Wine + Chromium يستهلكان ذاكرة كبيرة |
+| `Installation has failed — Failed to install the .NET Framework` | مُثبّت Claude (Squirrel) يتحقق من .NET ويحاول تنزيله فيفشل على Wine. **Claude نفسه Electron ولا يحتاج .NET وقت التشغيل** — الفحص فقط. `claude-pc-win` يعالجها في طبقتين تلقائياً (انظر أدناه) |
+
+### مُثبّت Claude و.NET Framework
+
+`Claude-Setup-x64.exe` هو مُثبّت **Squirrel**، ويشترط .NET Framework 4.5+ قبل
+أن يبدأ. على Wine تفشل محاولته لتنزيل .NET، فيتوقف برسالة
+`Failed to install the .NET Framework`.
+
+المفتاح: **.NET مطلوب للمُثبّت لا للتطبيق.** Claude Desktop تطبيق Electron
+(Chromium + Node) ولا يلمس .NET بعد التثبيت. لذلك يعمل `claude-pc-win` على
+طبقتين متتاليتين:
+
+1. **تسجيل .NET 4.8 في السجل** — يكتب
+   `HKLM\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\{Full,Client}`
+   بقيم `Install=1` و `Release=528040` و `Version=4.8.09032`، فيمضي فحص
+   المُثبّت ويكمل التثبيت طبيعياً.
+2. **الفكّ المباشر** إن لم يُنتج المُثبّت `claude.exe` رغم ذلك: المُثبّت يحمل
+   داخله حزمة `.nupkg` (أرشيف zip) فيها التطبيق كاملاً في `lib/net45`. يُفكّ
+   بـ p7zip ويُنسخ إلى مسار Squirrel المعتاد
+   `AppData\Local\AnthropicClaude\app-<نسخة>`، مع نسخ `Squirrel.exe` باسم
+   `Update.exe` في المجلد الأب كما يفعل المُثبّت. النتيجة تثبيت عامل بلا
+   تشغيل المُثبّت إطلاقاً.
+
+لإعادة المحاولة من الصفر بعد فشل سابق:
+
+```bash
+S25_WIN_REINSTALL=1 s25-desktop win-claude
+```
 
 للتشخيص المفصّل شغّل مع سجلات Wine:
 

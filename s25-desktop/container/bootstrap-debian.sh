@@ -20,7 +20,9 @@ need_root
 export DEBIAN_FRONTEND=noninteractive
 
 S25_USER="${S25_USER:-s25}"
-S25_DPI="${S25_DPI:-140}"
+# قيمة xsettings المكتوبة في XML؛ الجلسة تحسب القيمة الفعلية من عرض الشاشة
+# (env.sh) وتطبّقها بـ xrdb، لكن هذه هي ما تراه تطبيقات GTK فاحتياطيها 240.
+S25_DPI="${S25_DPI:-240}"
 
 DISTRO_NAME="$( (. /etc/os-release && echo "$PRETTY_NAME") 2>/dev/null || echo "غير معروفة")"
 log "التوزيعة داخل الحاوية: $DISTRO_NAME"
@@ -36,6 +38,7 @@ apt_install xfce4 xfce4-terminal openbox dbus-x11 x11-xserver-utils xauth \
 apt_install_soft thunar-archive-plugin xarchiver \
     xfce4-taskmanager xfce4-screenshooter mousepad \
     x11-utils mesa-utils vulkan-tools pulseaudio-utils xclip zenity \
+    p7zip-full \
     gnome-themes-extra adwaita-icon-theme \
     fonts-noto-core fonts-noto-color-emoji fonts-liberation \
     fonts-kacst-one fonts-hosny-amiri fonts-sil-scheherazade \
