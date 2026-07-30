@@ -185,7 +185,15 @@ EOF
 
 if [ "$PAYLOAD_ONLY" = 1 ]; then
     install_termux_commands
-    ok "تم تحديث سكربتات النظام داخل الحاوية (/opt/s25/src)"
+    # الأدوات العاملة (/opt/s25/bin و /opt/s25/etc) نسخ منفصلة عن /opt/s25/src:
+    # بلا تحديثها يبقى win-run و env.sh و s25-session قديمة بعد كل s25-update.
+    if plogin "test -r /opt/s25/src/install-tools.sh" >/dev/null 2>&1; then
+        plogin "bash /opt/s25/src/install-tools.sh" \
+            || warn "تعذر تحديث أدوات /opt/s25 — شغّل: s25-update bootstrap-debian.sh"
+    else
+        warn "install-tools.sh غير موجود في الحمولة — حدّث المستودع (git pull)"
+    fi
+    ok "تم تحديث سكربتات النظام وأدواته داخل الحاوية"
     exit 0
 fi
 

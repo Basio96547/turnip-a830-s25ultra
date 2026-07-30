@@ -73,70 +73,9 @@ mkdir -p /var/lib/dbus
 [ -s /var/lib/dbus/machine-id ] || cp /etc/machine-id /var/lib/dbus/machine-id 2>/dev/null || true
 
 step "5/6 تثبيت أدوات النظام في /opt/s25"
-install -d /opt/s25/bin /opt/s25/etc /opt/s25/share
-for f in "$SRC_DIR/bin/"*; do
-    [ -f "$f" ] || continue
-    install -m755 "$f" "/opt/s25/bin/$(basename "$f")"
-done
-install -m644 "$SRC_DIR/etc/env.sh" /opt/s25/etc/env.sh
-install -m644 "$SRC_DIR/etc/profile.d-s25.sh" /etc/profile.d/10-s25-desktop.sh
-if [ -f "$SRC_DIR/share/claude-pc.svg" ]; then
-    install -Dm644 "$SRC_DIR/share/claude-pc.svg" \
-        /usr/share/icons/hicolor/scalable/apps/claude-pc.svg
-fi
-for b in s25-session s25-app s25-doctor win-run claude-pc-win chrome-pc-win; do
-    ln -sf "/opt/s25/bin/$b" "/usr/local/bin/$b"
-done
-
-# مدخلات قائمة التطبيقات لبرامج ويندوز
-cat > /usr/share/applications/claude-pc-win.desktop <<'EOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Claude Desktop (ويندوز)
-Name[en]=Claude Desktop (Windows)
-Comment=نسخة ويندوز الرسمية عبر Wine + box64
-Exec=/opt/s25/bin/claude-pc-win
-Icon=claude-pc
-Terminal=false
-StartupNotify=true
-Categories=Network;Development;Utility;
-EOF
-cat > /usr/share/applications/chrome-pc-win.desktop <<'EOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Google Chrome (ويندوز)
-Name[en]=Google Chrome (Windows)
-Comment=نسخة ويندوز الرسمية عبر Wine + box64 + DXVK
-Exec=/opt/s25/bin/chrome-pc-win %U
-Icon=web-browser
-Terminal=false
-StartupNotify=true
-Categories=Network;WebBrowser;
-MimeType=text/html;x-scheme-handler/http;x-scheme-handler/https;
-EOF
-cat > /usr/share/applications/winecfg-s25.desktop <<'EOF'
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=إعدادات ويندوز (winecfg)
-Name[en]=Windows settings (winecfg)
-Exec=/opt/s25/bin/win-run winecfg
-Icon=preferences-system
-Terminal=false
-Categories=Settings;
-EOF
-update-desktop-database >/dev/null 2>&1 || true
-
-if [ -d "$S25_HOME" ]; then
-    install -d -o "$S25_USER" -g "$S25_USER" "$S25_HOME/Desktop"
-    for d in claude-pc-win chrome-pc-win; do
-        install -m755 -o "$S25_USER" -g "$S25_USER" \
-            "/usr/share/applications/$d.desktop" "$S25_HOME/Desktop/$d.desktop"
-    done
-fi
-ok "الأوامر: s25-doctor · win-run · claude-pc-win · chrome-pc-win"
+# الفعل نفسه في install-tools.sh حتى يتمكن s25-update من تحديث الأدوات وحدها
+export S25_USER SRC_DIR
+bash "$SRC_DIR/install-tools.sh"
 
 step "6/6 إعدادات سطح المكتب لشاشة S25 Ultra"
 XFCONF="$S25_HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
