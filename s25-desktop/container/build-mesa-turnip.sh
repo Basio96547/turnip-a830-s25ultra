@@ -164,6 +164,7 @@ else
           -Dintel=disabled -Dradeon=disabled -Damdgpu=disabled -Dnouveau=disabled \
           -Dvmwgfx=disabled -Domap=disabled -Dexynos=disabled -Dtegra=disabled \
           -Dvc4=disabled -Detnaviv=disabled -Dfreedreno=enabled \
+          -Dfreedreno-kgsl=true \
           -Dman-pages=disabled -Dtests=false >/dev/null
       ninja -C build -j "$JOBS" install >/dev/null )
     ok "libdrm $(PKG_CONFIG_PATH=$PREFIX_DIR/lib/pkgconfig pkg-config --modversion libdrm) في $PREFIX_DIR"

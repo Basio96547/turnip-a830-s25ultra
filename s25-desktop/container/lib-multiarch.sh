@@ -71,7 +71,7 @@ enable_amd64_multiarch() {
 install_amd64_runtime_libs() {
     apt_install_soft \
         libc6:amd64 libstdc++6:amd64 libgcc-s1:amd64 \
-        libglib2.0-0:amd64 libx11-6:amd64 libxext6:amd64 libxrender1:amd64 \
+        libglib2.0-0:amd64 libglib2.0-0t64:amd64 libx11-6:amd64 libxext6:amd64 libxrender1:amd64 \
         libxrandr2:amd64 libxi6:amd64 libxcursor1:amd64 libxcomposite1:amd64 \
         libxdamage1:amd64 libxfixes3:amd64 libxinerama1:amd64 libxcb1:amd64 \
         libxkbcommon0:amd64 libfreetype6:amd64 libfontconfig1:amd64 \

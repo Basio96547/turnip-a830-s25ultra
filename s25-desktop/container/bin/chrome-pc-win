@@ -26,7 +26,17 @@ fi
 
 MSI_URL="${S25_CHROME_MSI_URL:-https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi}"
 DL_DIR="/opt/s25/windows/downloads"
-CHROME_EXE="$WINEPREFIX/drive_c/Program Files/Google/Chrome/Application/chrome.exe"
+# حزمة MSI الرسمية 64-بت تثبّت في Program Files، لكن نتحقق من المسارين
+find_chrome_exe() {
+    local c
+    for c in "$WINEPREFIX/drive_c/Program Files/Google/Chrome/Application/chrome.exe" \
+             "$WINEPREFIX/drive_c/Program Files (x86)/Google/Chrome/Application/chrome.exe"; do
+        [ -f "$c" ] && { printf '%s' "$c"; return 0; }
+    done
+    return 1
+}
+CHROME_EXE="$(find_chrome_exe || true)"
+CHROME_EXE="${CHROME_EXE:-$WINEPREFIX/drive_c/Program Files/Google/Chrome/Application/chrome.exe}"
 
 if [ ! -f "$CHROME_EXE" ] || [ "${S25_WIN_REINSTALL:-0}" = "1" ]; then
     printf '▶ Chrome لويندوز غير مثبت — سيتم تنزيل حزمة MSI الرسمية\n'
@@ -54,7 +64,8 @@ EOF
     printf '▶ تثبيت Chrome داخل بيئة ويندوز (دقائق على الجوال)…\n'
     win-run "$MSI" /qn || printf '⚠ المُثبّت أبلغ عن خطأ — سنتحقق من النتيجة\n' >&2
 
-    if [ ! -f "$CHROME_EXE" ]; then
+    CHROME_EXE="$(find_chrome_exe || true)"
+    if [ -z "$CHROME_EXE" ]; then
         cat >&2 <<'EOF'
 ✗ لم يُعثر على chrome.exe بعد التثبيت.
   للتشخيص:  win-run winecfg

@@ -203,4 +203,8 @@ EOF
 ok "s25-desktop و s25-stop جاهزان"
 
 
+step "التشخيص النهائي"
+plogin "/opt/s25/bin/s25-doctor" 2>&1 | sed -n '/الرسوميات/,$p' | head -40 || \
+    warn "تعذر تشغيل s25-doctor — شغّله يدوياً: s25-desktop shell ثم s25-doctor"
+
 ok "اكتملت تهيئة الحاوية"

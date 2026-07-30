@@ -28,9 +28,10 @@ SETUP_URL="${S25_CLAUDE_SETUP_URL:-https://storage.googleapis.com/osprey-downloa
 DL_DIR="/opt/s25/windows/downloads"
 
 find_claude_exe() {
-    # Squirrel يثبّت في AppData\Local\AnthropicClaude — نأخذ أحدث نسخة
-    find "$WINEPREFIX/drive_c/users" -maxdepth 6 -type f \
-        \( -iname 'claude.exe' \) 2>/dev/null | sort | tail -1
+    # Squirrel يثبّت في AppData\Local\AnthropicClaude\app-<نسخة>\claude.exe
+    # نأخذ الأحدث زمنياً: الترتيب الأبجدي يخطئ (app-0.9 بعد app-0.13)
+    find "$WINEPREFIX/drive_c/users" -maxdepth 6 -type f -iname 'claude.exe' \
+        -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-
 }
 
 CLAUDE_EXE="$(find_claude_exe || true)"

@@ -70,6 +70,9 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+id -u "$S25_USER" >/dev/null 2>&1 || \
+    die "المستخدم $S25_USER غير موجود — شغّل bootstrap-debian.sh أولاً:
+    bash /opt/s25/src/bootstrap-debian.sh"
 S25_HOME="$(getent passwd "$S25_USER" | cut -d: -f6)"
 S25_HOME="${S25_HOME:-/home/$S25_USER}"
 

@@ -37,7 +37,7 @@ apt_install_soft thunar-archive-plugin xarchiver \
     x11-utils mesa-utils vulkan-tools pulseaudio-utils xclip \
     gnome-themes-extra adwaita-icon-theme \
     fonts-noto-core fonts-noto-color-emoji fonts-liberation \
-    fonts-kacst fonts-hosny-amiri \
+    fonts-kacst-one fonts-hosny-amiri fonts-sil-scheherazade \
     mesa-vulkan-drivers libgl1-mesa-dri
 
 step "3/6 اللغات (عربي + إنجليزي)"
